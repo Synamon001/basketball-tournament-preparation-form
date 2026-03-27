@@ -275,8 +275,9 @@
       color: #e74c3c;
       background-color: #fadbd8;
       padding: 10px;
-      border-radius: 4px;
       margin-top: 10px;
+      margin-bottom: 10px;
+      border-radius: 4px;
       display: none;
     }
   </style>
@@ -1285,59 +1286,42 @@
     function initializeTrackingTab() {
       // This function would be used to load any data from the registration form
       // or from a database/localStorage in a real implementation
-      updateTaskTracking();
-    }
-    
-    // Function to update task tracking based on registrations
-    function updateTaskTracking() {
-      // Get all registered tasks from localStorage or session
       const registeredTasks = getRegisteredTasks();
-      
-      // Update the tracking table with registered tasks
-      if (registeredTasks && registeredTasks.length > 0) {
-        registeredTasks.forEach(task => {
-          updateTaskInTrackingTable(task);
-        });
-      }
+      updateTrackingTable(registeredTasks);
     }
     
-    // Function to get registered tasks from storage
+    // Function to get registered tasks from localStorage
     function getRegisteredTasks() {
-      const tasksString = localStorage.getItem('registeredTasks');
-      return tasksString ? JSON.parse(tasksString) : [];
+      const tasksJson = localStorage.getItem('registeredTasks');
+      return tasksJson ? JSON.parse(tasksJson) : [];
     }
     
-    // Function to update a specific task in the tracking table
-    function updateTaskInTrackingTable(task) {
-      // Find the corresponding row in the tracking table
-      const taskId = task.taskId;
-      const subtaskId = task.subtaskId || taskId;
+    // Function to update the tracking table with registered tasks
+    function updateTrackingTable(tasks) {
+      if (!tasks || tasks.length === 0) return;
       
-      // Find the row for this subtask
-      const row = document.querySelector(`tr[data-parent="${taskId.split('-')[0]}"] td:first-child:contains("${subtaskId}")`).closest('tr') || 
-                 document.querySelector(`tr.main-task td:contains("${taskId}")`).closest('tr');
-      
-      if (row) {
-        // Update the assigned to column
-        row.cells[2].textContent = task.name;
+      tasks.forEach(task => {
+        // Find the main task row
+        const taskId = task.taskId;
+        const mainTaskRow = document.querySelector(`tr.main-task td:contains("${taskId.split('-')[0]}")`).closest('tr');
         
-        // Update the deadline column
-        row.cells[3].textContent = task.deadline || '-';
-        
-        // Update the time column if reminder time exists
-        if (task.reminderTime) {
-          row.cells[4].textContent = task.reminderTime;
-        }
-        
-        // Update status to in-progress
-        const statusCell = row.cells[5];
-        statusCell.innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
-      }
-    }
-    
-    // Function to handle form submission with validation
-    document.getElementById('submit-registration').addEventListener('click', function() {
-      const errorMessageElement = document.getElementById('error-message');
-      errorMessageElement.style.display = 'none';
-      errorMessageElement.textContent
-      
+        if (mainTaskRow) {
+          // Update main task row if no specific subtask
+          if (!task.subtaskId) {
+            mainTaskRow.cells[2].textContent = task.name;
+            mainTaskRow.cells[3].textContent = task.deadline || '-';
+            if (task.reminderTime) {
+              mainTaskRow.cells[4].textContent = task.reminderTime;
+            }
+            mainTaskRow.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
+          } else {
+            // Find and update the specific subtask row
+            const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId.split('-')[0]}"]`);
+            subtaskRows.forEach(row => {
+              if (row.cells[0].textContent.toLowerCase().includes(task.subtaskName.toLowerCase())) {
+                row.cells[2].textContent = task.name;
+                row.cells[3].textContent = task.deadline || '-';
+                if (task.reminderTime) {
+                  row.cells[4].textContent = task.reminderTime;
+                }
+                row.cells[5].innerHTML = '<span class="status-badge status-in-
