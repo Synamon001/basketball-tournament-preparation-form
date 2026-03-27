@@ -271,6 +271,14 @@
     .submit-btn:hover {
       background-color: #45a049;
     }
+    .error-message {
+      color: #e74c3c;
+      background-color: #fadbd8;
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 10px;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -633,6 +641,7 @@
           </div>
         </div>
         
+        <div id="error-message" class="error-message"></div>
         <button type="button" id="submit-registration" class="submit-btn">Submit my registration</button>
       </form>
     </div>
@@ -1276,29 +1285,59 @@
     function initializeTrackingTab() {
       // This function would be used to load any data from the registration form
       // or from a database/localStorage in a real implementation
+      updateTaskTracking();
     }
     
-    // Function to handle form submission
-    document.getElementById('submit-registration').addEventListener('click', function() {
-      // Validate the form
-      const name = document.getElementById('name').value;
-      const title = document.getElementById('class').value;
+    // Function to update task tracking based on registrations
+    function updateTaskTracking() {
+      // Get all registered tasks from localStorage or session
+      const registeredTasks = getRegisteredTasks();
       
-      if (!name || !title) {
-        alert('Please fill in all required fields.');
-        return;
+      // Update the tracking table with registered tasks
+      if (registeredTasks && registeredTasks.length > 0) {
+        registeredTasks.forEach(task => {
+          updateTaskInTrackingTable(task);
+        });
       }
+    }
+    
+    // Function to get registered tasks from storage
+    function getRegisteredTasks() {
+      const tasksString = localStorage.getItem('registeredTasks');
+      return tasksString ? JSON.parse(tasksString) : [];
+    }
+    
+    // Function to update a specific task in the tracking table
+    function updateTaskInTrackingTable(task) {
+      // Find the corresponding row in the tracking table
+      const taskId = task.taskId;
+      const subtaskId = task.subtaskId || taskId;
       
-      // In a real implementation, this would:
-      // 1. Collect all form data
-      // 2. Update the tracking table with the registration data
-      // 3. Store the data in a database or localStorage
+      // Find the row for this subtask
+      const row = document.querySelector(`tr[data-parent="${taskId.split('-')[0]}"] td:first-child:contains("${subtaskId}")`).closest('tr') || 
+                 document.querySelector(`tr.main-task td:contains("${taskId}")`).closest('tr');
       
-      alert('Registration submitted successfully!\nYour tasks have been added to the tracking system.');
+      if (row) {
+        // Update the assigned to column
+        row.cells[2].textContent = task.name;
+        
+        // Update the deadline column
+        row.cells[3].textContent = task.deadline || '-';
+        
+        // Update the time column if reminder time exists
+        if (task.reminderTime) {
+          row.cells[4].textContent = task.reminderTime;
+        }
+        
+        // Update status to in-progress
+        const statusCell = row.cells[5];
+        statusCell.innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
+      }
+    }
+    
+    // Function to handle form submission with validation
+    document.getElementById('submit-registration').addEventListener('click', function() {
+      const errorMessageElement = document.getElementById('error-message');
+      errorMessageElement.style.display = 'none';
+      errorMessageElement.textContent
       
-      // Switch to the tracking tab to show the registered tasks
-      document.querySelector('.tab button[onclick="openTab(event, \'tracking\')"]').click();
-    });
-  </script>
-</body>
-</html>
