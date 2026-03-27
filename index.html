@@ -155,9 +155,16 @@
       border-radius: 3px;
       cursor: pointer;
       font-size: 12px;
+      margin-right: 5px;
     }
     .action-btn:hover {
       background-color: #2980b9;
+    }
+    .remove-btn {
+      background-color: #e74c3c;
+    }
+    .remove-btn:hover {
+      background-color: #c0392b;
     }
     .complete-btn {
       background-color: #2ecc71;
@@ -223,6 +230,7 @@
       margin-bottom: 15px;
       display: flex;
       gap: 15px;
+      flex-wrap: wrap;
     }
     .filter-options select {
       width: auto;
@@ -280,6 +288,27 @@
       border-radius: 4px;
       display: none;
     }
+    .user-controls {
+      text-align: right;
+      margin-bottom: 15px;
+    }
+    .user-controls button {
+      background-color: #3498db;
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+    .user-display {
+      margin-left: 10px;
+      font-weight: bold;
+    }
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .checkbox-container input[type="checkbox"] {
+      margin-right: 8px;
+    }
   </style>
 </head>
 <body>
@@ -303,6 +332,11 @@
       <li>Share it with specific users or groups</li>
       <li>Allow editing permissions for collaborative task management</li>
     </ul>
+  </div>
+  
+  <div class="user-controls">
+    <button id="change-user-btn">Change User</button>
+    <span id="current-user-display" class="user-display"></span>
   </div>
   
   <div class="tab-container">
@@ -676,6 +710,11 @@
             <option value="cleanup">Cleanup</option>
             <option value="reporting">Reporting</option>
           </select>
+        </div>
+        
+        <div class="checkbox-container">
+          <input type="checkbox" id="my-tasks-filter" onchange="filterTasks()">
+          <label for="my-tasks-filter">Show only my tasks</label>
         </div>
       </div>
       
@@ -1187,6 +1226,20 @@
   </div>
   
   <script>
+    // Fonction pour obtenir l'utilisateur actuel
+    function getCurrentUser() {
+      let currentUser = localStorage.getItem('currentUser');
+      
+      if (!currentUser) {
+        currentUser = prompt('Please enter your name to identify your tasks:');
+        if (currentUser) {
+          localStorage.setItem('currentUser', currentUser);
+        }
+      }
+      
+      return currentUser;
+    }
+    
     // Tab functionality
     function openTab(evt, tabName) {
       var i, tabcontent, tablinks;
@@ -1238,7 +1291,7 @@
             const parentId = row.getAttribute('data-parent');
             const parentRows = document.querySelectorAll(`tr.main-task`);
             parentRows.forEach(parentRow => {
-              if (parentRow.cells[0].textContent.includes(parentId)) {
+              if (parentRow.cells[0].textContent.toLowerCase().includes(parentId.toLowerCase())) {
                 parentRow.style.display = '';
               }
             });
@@ -1249,10 +1302,13 @@
       });
     }
     
-    // Function to filter tasks by status and category
+    // Function to filter tasks by status, category, and user
     function filterTasks() {
       const statusFilter = document.getElementById('status-filter').value;
       const categoryFilter = document.getElementById('category-filter').value;
+      const currentUser = getCurrentUser();
+      const showOnlyMyTasks = document.getElementById('my-tasks-filter').checked;
+      
       const rows = document.querySelectorAll('#tracking-table tbody tr:not(.task-category)');
       
       rows.forEach(row => {
@@ -1272,25 +1328,14 @@
           if (!categoryText.includes(categoryFilter.toLowerCase())) showRow = false;
         }
         
+        // User filtering
+        if (showOnlyMyTasks && currentUser) {
+          const assignedTo = row.cells[2].textContent;
+          if (!assignedTo.includes(currentUser)) showRow = false;
+        }
+        
         row.style.display = showRow ? '' : 'none';
       });
-    }
-    
-    // Function to edit a task
-    function editTask(taskId) {
-      alert('Editing task: ' + taskId + '\nThis functionality would open a modal to edit the task details.');
-      // In a real implementation, this would open a modal with form fields to edit the task
-    }
-    
-    // Function to initialize the tracking tab
-    function initializeTrackingTab() {
-      // Load any registered tasks from localStorage
-      const registeredTasks = getRegisteredTasks();
-      if (registeredTasks && registeredTasks.length > 0) {
-        registeredTasks.forEach(task => {
-          updateTaskInTrackingTable(task);
-        });
-      }
     }
     
     // Function to get registered tasks from localStorage
@@ -1304,8 +1349,7 @@
       const taskData = [];
       const name = document.getElementById('name').value;
       const title = document.getElementById('class').value;
-      
-      selectedTasks.forEach(taskCheckbox => {
+selectedTasks.forEach(taskCheckbox => {
         const taskId = taskCheckbox.value;
         const taskGroup = taskCheckbox.closest('.task-group');
         
@@ -1349,11 +1393,25 @@
       return taskData;
     }
     
-    // Function to save task registration data
+    // Function to save task registration data - Allows multiple registrations
     function saveTaskRegistration(taskData) {
       let registeredTasks = getRegisteredTasks();
+      
+      // Simply add the new tasks without checking for duplicates
       registeredTasks = registeredTasks.concat(taskData);
+      
       localStorage.setItem('registeredTasks', JSON.stringify(registeredTasks));
+    }
+    
+    // Function to get all people assigned to a specific task/subtask
+    function getAllAssignedPeople(taskId, subtaskId) {
+      const tasks = getRegisteredTasks().filter(t => 
+        t.taskId === taskId && t.subtaskId === subtaskId
+      );
+      
+      // Extract unique names
+      const names = [...new Set(tasks.map(t => t.name))];
+      return names;
     }
     
     // Function to update a specific task in the tracking table
@@ -1377,12 +1435,31 @@
       if (mainTaskRow) {
         // If no specific subtask, update the main task row
         if (!subtaskId) {
-          mainTaskRow.cells[2].textContent = task.name;
-          mainTaskRow.cells[3].textContent = task.deadline || '-';
-          if (task.reminderTime) {
-            mainTaskRow.cells[4].textContent = task.reminderTime;
+          // Get all people assigned to this main task
+          const assignedPeople = getAllAssignedPeople(taskId, '');
+          
+          // Update the cell with all assigned people
+          mainTaskRow.cells[2].textContent = assignedPeople.length > 0 ? assignedPeople.join(', ') : 'Not assigned yet';
+          
+          // Update deadline (use the earliest one)
+          const deadlines = getRegisteredTasks()
+            .filter(t => t.taskId === taskId && (!t.subtaskId || t.subtaskId === ''))
+            .map(t => t.deadline)
+            .filter(d => d);
+          
+          if (deadlines.length > 0) {
+            deadlines.sort();
+            mainTaskRow.cells[3].textContent = deadlines[0];
           }
+          
+          // Update status
           mainTaskRow.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
+          
+          // Update actions
+          mainTaskRow.cells[6].innerHTML = `
+            <button class="action-btn" onclick="editTask('${taskId}')">Edit</button>
+            <button class="action-btn remove-btn" onclick="removeTask('${taskId}', '', '${task.name}')">Remove</button>
+          `;
         } else {
           // Find and update the specific subtask row
           const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
@@ -1392,15 +1469,38 @@
             const subtaskCell = row.cells[0];
             
             if (subtaskCell && subtaskCell.textContent.toLowerCase().includes(task.subtaskName.toLowerCase())) {
-              row.cells[2].textContent = task.name;
-              row.cells[3].textContent = task.deadline || '-';
+              // Get all people assigned to this micro-task
+              const assignedPeople = getAllAssignedPeople(taskId, subtaskId);
+              
+              // Update the cell with all assigned people
+              row.cells[2].textContent = assignedPeople.length > 0 ? assignedPeople.join(', ') : 'Not assigned yet';
+              
+              // Update deadline (use the earliest one)
+              const deadlines = getRegisteredTasks()
+                .filter(t => t.taskId === taskId && t.subtaskId === subtaskId)
+                .map(t => t.deadline)
+                .filter(d => d);
+              
+              if (deadlines.length > 0) {
+                deadlines.sort();
+                row.cells[3].textContent = deadlines[0];
+              }
+              
+              // Update time if provided
               if (task.reminderTime) {
                 row.cells[4].textContent = task.reminderTime;
               }
+              
+              // Update status
               row.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
               
+              // Update actions
+              row.cells[6].innerHTML = `
+                <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
+                <button class="action-btn remove-btn" onclick="removeTask('${taskId}', '${subtaskId}', '${task.name}')">Remove</button>
+              `;
+              
               // Also update the parent task status
-              mainTaskRow.cells[2].textContent = task.name;
               mainTaskRow.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
               
               // Expand the subtasks to show the assigned task
@@ -1413,6 +1513,228 @@
             }
           }
         }
+      }
+    }
+    
+    // Function to remove a task assignment
+    function removeTask(taskId, subtaskId, assigneeName) {
+      if (confirm(`Are you sure you want to remove ${assigneeName}'s assignment from this task?`)) {
+        let registeredTasks = getRegisteredTasks();
+        
+        // Filter to remove only the specific assignment
+        registeredTasks = registeredTasks.filter(task => 
+          !(task.taskId === taskId && 
+            task.subtaskId === subtaskId && 
+            task.name === assigneeName)
+        );
+        
+        // Update storage
+        localStorage.setItem('registeredTasks', JSON.stringify(registeredTasks));
+        
+        // Reset and reinitialize the tracking table
+        resetTrackingTable();
+        initializeTrackingTab();
+        
+        alert('Task assignment has been removed successfully.');
+      }
+    }
+    
+    // Function to reset the tracking table
+    function resetTrackingTable() {
+      // Reset all "Assigned To" cells to "Not assigned yet"
+      const allTaskRows = document.querySelectorAll('#tracking-table tbody tr:not(.task-category)');
+      allTaskRows.forEach(row => {
+        row.cells[2].textContent = "Not assigned yet";
+        row.cells[3].textContent = "-";
+        row.cells[4].textContent = "00:00";
+        row.cells[5].innerHTML = '<span class="status-badge status-pending">To do</span>';
+        
+        // Reset action buttons
+        const taskId = row.classList.contains('subtask-row') 
+          ? row.getAttribute('data-parent') + '-' + row.cells[0].textContent.trim().toLowerCase().replace(/\s+/g, '-').split(' ')[0]
+          : row.cells[0].textContent.trim().toLowerCase().replace(/\s+/g, ' ').split(' ')[0];
+        
+        row.cells[6].innerHTML = `<button class="action-btn" onclick="editTask('${taskId}')">Edit</button>`;
+      });
+    }
+    
+    // Function to edit a task
+    function editTask(taskId) {
+      // Find all tasks that match this ID
+      const registeredTasks = getRegisteredTasks();
+      const tasksForId = registeredTasks.filter(t => 
+        (t.taskId === taskId) || (t.subtaskId === taskId)
+      );
+      
+      if (tasksForId.length === 0) {
+        alert('No assignments found for this task.');
+        return;
+      }
+      
+      // If multiple people are assigned, ask which one to edit
+      let taskToEdit;
+      if (tasksForId.length === 1) {
+        taskToEdit = tasksForId[0];
+        showEditForm(taskToEdit, registeredTasks);
+      } else {
+        // Create a modal to select which person to edit
+        const modal = document.createElement('div');
+        modal.style.position = 'fixed';
+        modal.style.left = '0';
+        modal.style.top = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+        modal.style.display = 'flex';
+        modal.style.justifyContent = 'center';
+        modal.style.alignItems = 'center';
+        modal.style.zIndex = '1000';
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.backgroundColor = 'white';
+        modalContent.style.padding = '20px';
+        modalContent.style.borderRadius = '5px';
+        modalContent.style.width = '60%';
+        modalContent.style.maxWidth = '500px';
+        
+        modalContent.innerHTML = `
+          <h3>Select Person to Edit</h3>
+          <p>Multiple people are assigned to this task. Select which assignment to edit:</p>
+          <select id="person-select" style="width: 100%; margin-bottom: 15px; padding: 8px;">
+            ${tasksForId.map((t, i) => `<option value="${i}">${t.name} (${t.title})</option>`).join('')}
+          </select>
+          <div style="display: flex; justify-content: space-between;">
+            <button id="select-person-btn" style="background-color: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer;">Select</button>
+            <button id="cancel-select-btn" style="background-color: #95a5a6; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer;">Cancel</button>
+          </div>
+        `;
+        
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+        // Handle button events
+        document.getElementById('select-person-btn').addEventListener('click', function() {
+          const selectedIndex = document.getElementById('person-select').value;
+          taskToEdit = tasksForId[selectedIndex];
+          document.body.removeChild(modal);
+          showEditForm(taskToEdit, registeredTasks);
+        });
+        
+        document.getElementById('cancel-select-btn').addEventListener('click', function() {
+          document.body.removeChild(modal);
+        });
+      }
+    }
+    
+    // Function to show the edit form
+    function showEditForm(task, allTasks) {
+      const modal = document.createElement('div');
+      modal.style.position = 'fixed';
+      modal.style.left = '0';
+      modal.style.top = '0';
+      modal.style.width = '100%';
+      modal.style.height = '100%';
+      modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+      modal.style.display = 'flex';
+      modal.style.justifyContent = 'center';
+      modal.style.alignItems = 'center';
+      modal.style.zIndex = '1000';
+      
+      const modalContent = document.createElement('div');
+      modalContent.style.backgroundColor = 'white';
+      modalContent.style.padding = '20px';
+      modalContent.style.borderRadius = '5px';
+      modalContent.style.width = '60%';
+      modalContent.style.maxWidth = '500px';
+      
+      modalContent.innerHTML = `
+        <h3>Edit Task Assignment</h3>
+        <p><strong>Task:</strong> ${task.subtaskName || task.taskId}</p>
+        <p><strong>Assigned to:</strong> ${task.name} (${task.title})</p>
+        
+        <label for="edit-deadline">Deadline:</label>
+        <input type="date" id="edit-deadline" value="${task.deadline || ''}" style="width: 100%; margin-bottom: 10px; padding: 8px;">
+        
+        <label for="edit-reminder-date">Reminder Date:</label>
+        <input type="date" id="edit-reminder-date" value="${task.reminderDate || ''}" style="width: 100%; margin-bottom: 10px; padding: 8px;">
+        
+        <label for="edit-reminder-time">Reminder Time:</label>
+        <input type="time" id="edit-reminder-time" value="${task.reminderTime || ''}" style="width: 100%; margin-bottom: 10px; padding: 8px;">
+        
+        <label for="edit-notes">Notes:</label>
+        <textarea id="edit-notes" rows="3" style="width: 100%; margin-bottom: 10px; padding: 8px;">${task.notes || ''}</textarea>
+        
+        <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+          <button id="update-task-btn" style="background-color: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer;">Update</button>
+          <button id="cancel-edit-btn" style="background-color: #95a5a6; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer;">Cancel</button>
+          <button id="delete-task-btn" style="background-color: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer;">Delete</button>
+        </div>
+      `;
+      
+      modal.appendChild(modalContent);
+      document.body.appendChild(modal);
+      
+      // Handle button events
+      document.getElementById('update-task-btn').addEventListener('click', function() {
+        // Find the exact index of this task
+        const index = allTasks.findIndex(t => 
+          t.taskId === task.taskId && 
+          t.subtaskId === task.subtaskId && 
+          t.name === task.name
+        );
+        
+        if (index !== -1) {
+          // Update only the editable fields
+          allTasks[index].deadline = document.getElementById('edit-deadline').value;
+          allTasks[index].reminderDate = document.getElementById('edit-reminder-date').value;
+          allTasks[index].reminderTime = document.getElementById('edit-reminder-time').value;
+          allTasks[index].notes = document.getElementById('edit-notes').value;
+          
+          // Save changes
+          localStorage.setItem('registeredTasks', JSON.stringify(allTasks));
+          
+          // Update display
+          resetTrackingTable();
+          initializeTrackingTab();
+          
+          alert('Task updated successfully!');
+        }
+        
+        // Close modal
+        document.body.removeChild(modal);
+      });
+      
+      document.getElementById('cancel-edit-btn').addEventListener('click', function() {
+        document.body.removeChild(modal);
+      });
+      
+      document.getElementById('delete-task-btn').addEventListener('click', function() {
+        removeTask(task.taskId, task.subtaskId, task.name);
+        document.body.removeChild(modal);
+      });
+    }
+    
+    // Function to initialize the tracking tab
+    function initializeTrackingTab() {
+      // Load registered tasks from localStorage
+      const registeredTasks = getRegisteredTasks();
+      
+      if (registeredTasks && registeredTasks.length > 0) {
+        registeredTasks.forEach(task => {
+          updateTaskInTrackingTable(task);
+        });
+      }
+      
+      // Make sure the "Show only my tasks" checkbox exists
+      if (!document.getElementById('my-tasks-filter')) {
+        const filterOptions = document.querySelector('.filter-options');
+        const myTasksFilter = document.createElement('div');
+        myTasksFilter.className = 'checkbox-container';
+        myTasksFilter.innerHTML = `
+          <input type="checkbox" id="my-tasks-filter" onchange="filterTasks()">
+          <label for="my-tasks-filter">Show only my tasks</label>
+        `;
+        filterOptions.appendChild(myTasksFilter);
       }
     }
     
@@ -1466,6 +1788,26 @@
       
       // Switch to tracking tab
       document.querySelector('.tab button[onclick="openTab(event, \'tracking\')"]').click();
+    });
+    
+    // Handle user management
+    document.addEventListener('DOMContentLoaded', function() {
+      // Display current user
+      const currentUser = getCurrentUser();
+      if (currentUser) {
+        document.getElementById('current-user-display').textContent = `Current user: ${currentUser}`;
+        document.getElementById('name').value = currentUser;
+      }
+      
+      // Handle user change
+      document.getElementById('change-user-btn').addEventListener('click', function() {
+        const newUser = prompt('Enter your name:');
+        if (newUser) {
+          localStorage.setItem('currentUser', newUser);
+          document.getElementById('current-user-display').textContent = `Current user: ${newUser}`;
+          document.getElementById('name').value = newUser;
+        }
+      });
     });
   </script>
 </body>
