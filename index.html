@@ -1284,10 +1284,13 @@
     
     // Function to initialize the tracking tab
     function initializeTrackingTab() {
-      // This function would be used to load any data from the registration form
-      // or from a database/localStorage in a real implementation
+      // Load any registered tasks from localStorage
       const registeredTasks = getRegisteredTasks();
-      updateTrackingTable(registeredTasks);
+      if (registeredTasks && registeredTasks.length > 0) {
+        registeredTasks.forEach(task => {
+          updateTaskInTrackingTable(task);
+        });
+      }
     }
     
     // Function to get registered tasks from localStorage
@@ -1296,32 +1299,174 @@
       return tasksJson ? JSON.parse(tasksJson) : [];
     }
     
-    // Function to update the tracking table with registered tasks
-    function updateTrackingTable(tasks) {
-      if (!tasks || tasks.length === 0) return;
+    // Function to collect task data from selected tasks
+    function collectTaskData(selectedTasks) {
+      const taskData = [];
+      const name = document.getElementById('name').value;
+      const title = document.getElementById('class').value;
       
-      tasks.forEach(task => {
-        // Find the main task row
-        const taskId = task.taskId;
-        const mainTaskRow = document.querySelector(`tr.main-task td:contains("${taskId.split('-')[0]}")`).closest('tr');
+      selectedTasks.forEach(taskCheckbox => {
+        const taskId = taskCheckbox.value;
+        const taskGroup = taskCheckbox.closest('.task-group');
         
-        if (mainTaskRow) {
-          // Update main task row if no specific subtask
-          if (!task.subtaskId) {
-            mainTaskRow.cells[2].textContent = task.name;
-            mainTaskRow.cells[3].textContent = task.deadline || '-';
-            if (task.reminderTime) {
-              mainTaskRow.cells[4].textContent = task.reminderTime;
+        // Find the subtask select element
+        const subtaskSelect = taskGroup.querySelector(`select[id="${taskId}-subtask"]`);
+        let subtaskId = '';
+        let subtaskName = '';
+        
+        if (subtaskSelect && subtaskSelect.value) {
+          subtaskId = subtaskSelect.value;
+          subtaskName = subtaskSelect.options[subtaskSelect.selectedIndex].text;
+        }
+        
+        // Get deadline if available
+        const deadlineInput = taskGroup.querySelector(`input[id="${taskId}-deadline"]`);
+        const deadline = deadlineInput ? deadlineInput.value : '';
+        
+        // Get reminder information
+        const reminderDateInput = taskGroup.querySelector(`input[id="${taskId}-reminder-date"]`);
+        const reminderTimeInput = taskGroup.querySelector(`input[id="${taskId}-reminder-time"]`);
+        const reminderDate = reminderDateInput ? reminderDateInput.value : '';
+        const reminderTime = reminderTimeInput ? reminderTimeInput.value : '';
+        
+        // Get notes
+        const notesTextarea = taskGroup.querySelector(`textarea[id="${taskId}-notes"]`);
+        const notes = notesTextarea ? notesTextarea.value : '';
+        
+        taskData.push({
+          taskId: taskId,
+          subtaskId: subtaskId,
+          subtaskName: subtaskName,
+          name: name,
+          title: title,
+          deadline: deadline,
+          reminderDate: reminderDate,
+          reminderTime: reminderTime,
+          notes: notes
+        });
+      });
+      
+      return taskData;
+    }
+    
+    // Function to save task registration data
+    function saveTaskRegistration(taskData) {
+      let registeredTasks = getRegisteredTasks();
+      registeredTasks = registeredTasks.concat(taskData);
+      localStorage.setItem('registeredTasks', JSON.stringify(registeredTasks));
+    }
+    
+    // Function to update a specific task in the tracking table
+    function updateTaskInTrackingTable(task) {
+      const taskId = task.taskId;
+      const subtaskId = task.subtaskId;
+      
+      // Find the main task row
+      let mainTaskRow = null;
+      const mainTaskRows = document.querySelectorAll('tr.main-task');
+      
+      for (let i = 0; i < mainTaskRows.length; i++) {
+        const row = mainTaskRows[i];
+        const taskCell = row.cells[0];
+        if (taskCell && taskCell.textContent.toLowerCase().includes(taskId.toLowerCase())) {
+          mainTaskRow = row;
+          break;
+        }
+      }
+      
+      if (mainTaskRow) {
+        // If no specific subtask, update the main task row
+        if (!subtaskId) {
+          mainTaskRow.cells[2].textContent = task.name;
+          mainTaskRow.cells[3].textContent = task.deadline || '-';
+          if (task.reminderTime) {
+            mainTaskRow.cells[4].textContent = task.reminderTime;
+          }
+          mainTaskRow.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
+        } else {
+          // Find and update the specific subtask row
+          const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
+          
+          for (let i = 0; i < subtaskRows.length; i++) {
+            const row = subtaskRows[i];
+            const subtaskCell = row.cells[0];
+            
+            if (subtaskCell && subtaskCell.textContent.toLowerCase().includes(task.subtaskName.toLowerCase())) {
+              row.cells[2].textContent = task.name;
+              row.cells[3].textContent = task.deadline || '-';
+              if (task.reminderTime) {
+                row.cells[4].textContent = task.reminderTime;
+              }
+              row.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
+              
+              // Also update the parent task status
+              mainTaskRow.cells[2].textContent = task.name;
+              mainTaskRow.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
+              
+              // Expand the subtasks to show the assigned task
+              const expandBtn = mainTaskRow.querySelector('.expand-btn');
+              if (expandBtn && expandBtn.textContent === '+') {
+                expandBtn.click();
+              }
+              
+              break;
             }
-            mainTaskRow.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
-          } else {
-            // Find and update the specific subtask row
-            const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId.split('-')[0]}"]`);
-            subtaskRows.forEach(row => {
-              if (row.cells[0].textContent.toLowerCase().includes(task.subtaskName.toLowerCase())) {
-                row.cells[2].textContent = task.name;
-                row.cells[3].textContent = task.deadline || '-';
-                if (task.reminderTime) {
-                  row.cells[4].textContent = task.reminderTime;
-                }
-                row.cells[5].innerHTML = '<span class="status-badge status-in-
+          }
+        }
+      }
+    }
+    
+    // Function to handle form submission with validation
+    document.getElementById('submit-registration').addEventListener('click', function() {
+      // Get form values
+      const name = document.getElementById('name').value;
+      const title = document.getElementById('class').value;
+      const errorMessageElement = document.getElementById('error-message');
+      errorMessageElement.style.display = 'none';
+      
+      // Check required fields
+      let missingFields = [];
+      if (!name) missingFields.push("First Name");
+      if (!title) missingFields.push("TITLE");
+      
+      // Check if at least one task is selected
+      const selectedTasks = document.querySelectorAll('input.task-checkbox:checked');
+      if (selectedTasks.length === 0) {
+        missingFields.push("at least one task");
+      } else {
+        // For each selected task, check if a subtask is selected when required
+        selectedTasks.forEach(taskCheckbox => {
+          const taskId = taskCheckbox.value;
+          const taskGroup = taskCheckbox.closest('.task-group');
+          const subtaskSelect = taskGroup.querySelector(`select[id="${taskId}-subtask"]`);
+          
+          if (subtaskSelect && subtaskSelect.value === "") {
+            missingFields.push(`a specific micro-task for ${taskId}`);
+          }
+        });
+      }
+      
+      // Display error message if there are missing fields
+      if (missingFields.length > 0) {
+        errorMessageElement.textContent = "Please provide the following information: " + missingFields.join(", ");
+        errorMessageElement.style.display = 'block';
+        return;
+      }
+      
+      // Collect and save task data
+      const taskData = collectTaskData(selectedTasks);
+      saveTaskRegistration(taskData);
+      
+      // Update the tracking table with the new task data
+      taskData.forEach(task => {
+        updateTaskInTrackingTable(task);
+      });
+      
+      alert('Registration submitted successfully!\nYour tasks have been added to the tracking system.');
+      
+      // Switch to tracking tab
+      document.querySelector('.tab button[onclick="openTab(event, \'tracking\')"]').click();
+    });
+  </script>
+</body>
+</html>
