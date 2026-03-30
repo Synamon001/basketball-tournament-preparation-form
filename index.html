@@ -1632,47 +1632,106 @@ if (showOnlyMyTasks && currentUser) {
       });
     }
     
-    // Fonction pour marquer une tâche comme terminée
+    // Fonction modifiée pour gérer la complétion ou l'incomplétion d'une tâche
     function completeTask(taskId, subtaskId) {
-      if (confirm('Mark this task as completed?')) {
-        // Trouver la ligne de tâche appropriée
-        let taskRow;
-        
-        if (!subtaskId) {
-          // Tâche principale
-          const mainTaskRows = document.querySelectorAll('tr.main-task');
-          for (let i = 0; i < mainTaskRows.length; i++) {
-            const row = mainTaskRows[i];
-            if (row.cells[0].textContent.toLowerCase().includes(taskId.toLowerCase())) {
-              taskRow = row;
-              break;
-            }
-          }
-        } else {
-          // Sous-tâche
-          const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
-          for (let i = 0; i < subtaskRows.length; i++) {
-            const row = subtaskRows[i];
-            if (row.cells[0].textContent.toLowerCase().includes(subtaskId.toLowerCase())) {
-              taskRow = row;
-              break;
-            }
+      // Trouver la ligne de tâche appropriée
+      let taskRow;
+      
+      if (!subtaskId) {
+        // Tâche principale
+        const mainTaskRows = document.querySelectorAll('tr.main-task');
+        for (let i = 0; i < mainTaskRows.length; i++) {
+          const row = mainTaskRows[i];
+          if (row.cells[0].textContent.toLowerCase().includes(taskId.toLowerCase())) {
+            taskRow = row;
+            break;
           }
         }
+      } else {
+        // Sous-tâche
+        const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
+        for (let i = 0; i < subtaskRows.length; i++) {
+          const row = subtaskRows[i];
+          if (row.cells[0].textContent.toLowerCase().includes(subtaskId.toLowerCase())) {
+            taskRow = row;
+            break;
+          }
+        }
+      }
+      
+      if (taskRow) {
+        // Vérifier l'état actuel de la tâche
+        const currentStatus = taskRow.cells[5].textContent.trim();
+        const isCompleted = currentStatus.includes('Completed');
         
-        if (taskRow) {
-          // Mettre à jour le statut
-          taskRow.cells[5].innerHTML = '<span class="status-badge status-completed">Completed</span>';
+        // Déterminer le nouvel état
+        const newStatus = isCompleted ? 'Incomplete' : 'Completed';
+        
+        // Demander confirmation
+        if (confirm(`Do you want to mark this task as ${newStatus}?`)) {
+          setTaskStatus(taskRow, taskId, subtaskId, newStatus);
+          
+          // Si c'est une sous-tâche, mettre à jour l'état de la tâche parent si nécessaire
+          if (subtaskId && newStatus === 'Completed') {
+            checkAllSubtasksCompleted(taskId);
+          } else if (subtaskId && newStatus === 'Incomplete') {
+            // Si une sous-tâche est marquée comme incomplète, la tâche parent doit aussi être incomplète
+            setParentTaskIncomplete(taskId);
+          }
+        }
+      }
+    }
+    
+    // Nouvelle fonction pour définir l'état d'une tâche
+    function setTaskStatus(taskRow, taskId, subtaskId, status) {
+      if (status === 'Completed') {
+        // Mettre à jour le statut à Completed
+        taskRow.cells[5].innerHTML = '<span class="status-badge status-completed">Completed</span>';
+        
+        // Mettre à jour les actions
+        taskRow.cells[6].innerHTML = `
+          <button class="action-btn" onclick="editTask('${subtaskId || taskId}')">Edit</button>
+          <button class="action-btn remove-btn" onclick="completeTask('${taskId}', '${subtaskId}')">Incomplete</button>
+        `;
+        
+        if (subtaskId) {
+          taskRow.cells[6].innerHTML += `
+            <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
+          `;
+        }
+      } else {
+        // Mettre à jour le statut à In Progress
+        taskRow.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
+        
+        // Mettre à jour les actions
+        taskRow.cells[6].innerHTML = `
+          <button class="action-btn" onclick="editTask('${subtaskId || taskId}')">Edit</button>
+          <button class="action-btn complete-btn" onclick="completeTask('${taskId}', '${subtaskId}')">Complete</button>
+        `;
+        
+        if (subtaskId) {
+          taskRow.cells[6].innerHTML += `
+            <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
+          `;
+        }
+      }
+    }
+    
+    // Nouvelle fonction pour marquer une tâche parent comme incomplète
+    function setParentTaskIncomplete(taskId) {
+      const mainTaskRows = document.querySelectorAll('tr.main-task');
+      for (let i = 0; i < mainTaskRows.length; i++) {
+        const row = mainTaskRows[i];
+        if (row.cells[0].textContent.toLowerCase().includes(taskId.toLowerCase())) {
+          // Mettre à jour le statut de la tâche principale
+          row.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
           
           // Mettre à jour les actions
-          taskRow.cells[6].innerHTML = `
-            <button class="action-btn" onclick="editTask('${subtaskId || taskId}')">Edit</button>
+          row.cells[6].innerHTML = `
+            <button class="action-btn" onclick="editTask('${taskId}')">Edit</button>
+            <button class="action-btn complete-btn" onclick="completeTask('${taskId}', '')">Complete</button>
           `;
-          
-          // Si c'est une sous-tâche, vérifier si toutes les sous-tâches sont terminées
-          if (subtaskId) {
-            checkAllSubtasksCompleted(taskId);
-          }
+          break;
         }
       }
     }
@@ -1698,6 +1757,12 @@ if (showOnlyMyTasks && currentUser) {
           if (row.cells[0].textContent.toLowerCase().includes(taskId.toLowerCase())) {
             // Mettre à jour le statut de la tâche principale
             row.cells[5].innerHTML = '<span class="status-badge status-completed">Completed</span>';
+            
+            // Mettre à jour les actions
+            row.cells[6].innerHTML = `
+              <button class="action-btn" onclick="editTask('${taskId}')">Edit</button>
+              <button class="action-btn remove-btn" onclick="completeTask('${taskId}', '')">Incomplete</button>
+            `;
             break;
           }
         }
