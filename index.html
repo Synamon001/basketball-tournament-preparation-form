@@ -127,6 +127,10 @@
       background-color: #2ecc71;
       color: white;
     }
+    .status-not-started {
+      background-color: #e74c3c;
+      color: white;
+    }
     .task-tracking {
       margin-top: 30px;
     }
@@ -332,13 +336,40 @@
       max-height: 300px;
       overflow-y: auto;
     }
+    
+    /* Styles pour les sélecteurs de statut */
     .status-select {
       padding: 5px;
       border-radius: 3px;
       border: 1px solid #ddd;
-      background-color: #f8f9fa;
-      margin-right: 5px;
+      background-color: transparent;
+      width: 100%;
       font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    
+    .status-select option {
+      font-weight: normal;
+      background-color: white;
+    }
+    
+    .status-select.status-not-started {
+      background-color: rgba(231, 76, 60, 0.2);
+      color: #c0392b;
+      border-color: #e74c3c;
+    }
+    
+    .status-select.status-in-progress {
+      background-color: rgba(52, 152, 219, 0.2);
+      color: #2980b9;
+      border-color: #3498db;
+    }
+    
+    .status-select.status-completed {
+      background-color: rgba(46, 204, 113, 0.2);
+      color: #27ae60;
+      border-color: #2ecc71;
     }
   </style>
 </head>
@@ -723,7 +754,7 @@
           <label for="status-filter">Filter by status:</label>
           <select id="status-filter" onchange="filterTasks()">
             <option value="all">All statuses</option>
-            <option value="pending">To do</option>
+            <option value="not-started">Not started</option>
             <option value="in-progress">In progress</option>
             <option value="completed">Completed</option>
           </select>
@@ -779,7 +810,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('admin')">Edit</button></td>
             </tr>
             
@@ -790,7 +821,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('admin-docs')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="admin">
@@ -799,7 +830,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('admin-coord')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="admin">
@@ -808,7 +839,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('admin-gym')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="admin">
@@ -817,7 +848,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('admin-follow')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="admin">
@@ -826,7 +857,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('admin-comm')">Edit</button></td>
             </tr>
             
@@ -845,7 +876,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('setup')">Edit</button></td>
             </tr>
             
@@ -856,7 +887,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('setup-sports')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="setup">
@@ -865,7 +896,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('setup-booths')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="setup">
@@ -874,7 +905,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('setup-signage')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="setup">
@@ -883,7 +914,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('setup-canteen')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="setup">
@@ -892,7 +923,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('setup-verify')">Edit</button></td>
             </tr>
             
@@ -911,7 +942,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('cleanup')">Edit</button></td>
             </tr>
             
@@ -922,7 +953,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('cleanup-booths')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="cleanup">
@@ -931,7 +962,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('cleanup-gym')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="cleanup">
@@ -940,7 +971,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('cleanup-equipment')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="cleanup">
@@ -949,7 +980,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('cleanup-canteen')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="cleanup">
@@ -958,7 +989,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('cleanup-signage')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="cleanup">
@@ -967,7 +998,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('cleanup-verify')">Edit</button></td>
             </tr>
             
@@ -981,7 +1012,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('finance')">Edit</button></td>
             </tr>
             
@@ -992,7 +1023,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('finance-receipts')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="finance">
@@ -1001,7 +1032,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('finance-tickets')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="finance">
@@ -1010,7 +1041,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('finance-canteen')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="finance">
@@ -1019,7 +1050,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('finance-expenses')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="finance">
@@ -1028,7 +1059,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('finance-profit')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="finance">
@@ -1037,7 +1068,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('finance-summary')">Edit</button></td>
             </tr>
             
@@ -1051,7 +1082,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('feedback')">Edit</button></td>
             </tr>
             
@@ -1062,7 +1093,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('feedback-forms')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="feedback">
@@ -1071,7 +1102,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('feedback-distribute')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="feedback">
@@ -1080,7 +1111,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('feedback-collect')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="feedback">
@@ -1089,7 +1120,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('feedback-compile')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="feedback">
@@ -1098,7 +1129,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('feedback-analyze')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="feedback">
@@ -1107,7 +1138,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('feedback-report')">Edit</button></td>
             </tr>
             
@@ -1121,7 +1152,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('thanks')">Edit</button></td>
             </tr>
             
@@ -1132,7 +1163,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('thanks-list')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="thanks">
@@ -1141,7 +1172,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('thanks-messages')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="thanks">
@@ -1150,7 +1181,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('thanks-certificates')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="thanks">
@@ -1159,7 +1190,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('thanks-ceremony')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="thanks">
@@ -1168,7 +1199,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('thanks-emails')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="thanks">
@@ -1177,7 +1208,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('thanks-publish')">Edit</button></td>
             </tr>
             
@@ -1191,7 +1222,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('report')">Edit</button></td>
             </tr>
             
@@ -1202,7 +1233,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('report-gather')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="report">
@@ -1211,7 +1242,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('report-results')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="report">
@@ -1220,7 +1251,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('report-document')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="report">
@@ -1229,7 +1260,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('report-photos')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="report">
@@ -1238,7 +1269,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('report-summary')">Edit</button></td>
             </tr>
             <tr class="subtask-row hidden" data-parent="report">
@@ -1247,7 +1278,7 @@
               <td>Not assigned yet</td>
               <td>-</td>
               <td>00:00</td>
-              <td><span class="status-badge status-pending">To do</span></td>
+              <td><span class="status-badge status-not-started">Not started</span></td>
               <td><button class="action-btn" onclick="editTask('report-recommendations')">Edit</button></td>
             </tr>
           </tbody>
@@ -1318,7 +1349,7 @@
           row.style.display = '';
           
           // If it's a subtask, also show its parent category
-          if (row.classList.contains('subtask-row')) {
+if (row.classList.contains('subtask-row')) {
             const parentId = row.getAttribute('data-parent');
             const parentRows = document.querySelectorAll(`tr.main-task`);
             parentRows.forEach(parentRow => {
@@ -1346,7 +1377,15 @@
         let showRow = true;
         
         // Status filtering
-if (categoryFilter !== 'all') {
+        if (statusFilter !== 'all') {
+          const statusText = row.cells[5].textContent.toLowerCase();
+          if (statusFilter === 'not-started' && !statusText.includes('not started')) showRow = false;
+          if (statusFilter === 'in-progress' && !statusText.includes('in progress')) showRow = false;
+          if (statusFilter === 'completed' && !statusText.includes('completed')) showRow = false;
+        }
+        
+        // Category filtering
+        if (categoryFilter !== 'all') {
           const categoryText = row.cells[1].textContent.toLowerCase();
           if (!categoryText.includes(categoryFilter.toLowerCase())) showRow = false;
         }
@@ -1410,7 +1449,8 @@ if (categoryFilter !== 'all') {
           deadline: deadline,
           reminderDate: reminderDate,
           reminderTime: reminderTime,
-          notes: notes
+          notes: notes,
+          status: 'not-started' // Statut par défaut: Not started
         });
       });
       
@@ -1442,6 +1482,7 @@ if (categoryFilter !== 'all') {
     function updateTaskInTrackingTable(task) {
       const taskId = task.taskId;
       const subtaskId = task.subtaskId;
+      const status = task.status || 'not-started'; // Par défaut: Not started
       
       // Trouver la ligne de la tâche principale
       let mainTaskRow = null;
@@ -1476,17 +1517,18 @@ if (categoryFilter !== 'all') {
             mainTaskRow.cells[3].textContent = deadlines[0];
           }
           
-          // Mettre à jour le statut
-          mainTaskRow.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
+          // Mettre à jour le statut avec un sélecteur intégré
+          mainTaskRow.cells[5].innerHTML = `
+            <select class="status-select status-${status}" onchange="updateTaskStatus('${taskId}', '', this.value)">
+              <option value="not-started" ${status === 'not-started' ? 'selected' : ''}>Not started</option>
+              <option value="in-progress" ${status === 'in-progress' ? 'selected' : ''}>In progress</option>
+              <option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option>
+            </select>
+          `;
           
-          // Mettre à jour les actions avec un sélecteur
+          // Mettre à jour les actions
           mainTaskRow.cells[6].innerHTML = `
             <button class="action-btn" onclick="editTask('${taskId}')">Edit</button>
-            <select class="status-select" onchange="updateTaskStatus('${taskId}', '', this.value)">
-              <option value="in-progress" selected>Select status</option>
-              <option value="completed">Complete</option>
-              <option value="in-progress">Incomplete</option>
-            </select>
           `;
         } else {
           // Trouver et mettre à jour la ligne de la sous-tâche spécifique
@@ -1519,22 +1561,20 @@ if (categoryFilter !== 'all') {
                 row.cells[4].textContent = task.reminderTime;
               }
               
-              // Mettre à jour le statut
-              row.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
-              
-              // Mettre à jour les actions avec un sélecteur
-              row.cells[6].innerHTML = `
-                <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
-                <select class="status-select" onchange="updateTaskStatus('${taskId}', '${subtaskId}', this.value)">
-                  <option value="in-progress" selected>Select status</option>
-                  <option value="completed">Complete</option>
-                  <option value="in-progress">Incomplete</option>
+              // Mettre à jour le statut avec un sélecteur intégré
+              row.cells[5].innerHTML = `
+                <select class="status-select status-${status}" onchange="updateTaskStatus('${taskId}', '${subtaskId}', this.value)">
+                  <option value="not-started" ${status === 'not-started' ? 'selected' : ''}>Not started</option>
+                  <option value="in-progress" ${status === 'in-progress' ? 'selected' : ''}>In progress</option>
+                  <option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option>
                 </select>
-                <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
               `;
               
-              // Mettre à jour également le statut de la tâche parent
-              mainTaskRow.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
+              // Mettre à jour les actions
+              row.cells[6].innerHTML = `
+                <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
+                <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
+              `;
               
               // Développer les sous-tâches pour afficher la tâche assignée
               const expandBtn = mainTaskRow.querySelector('.expand-btn');
@@ -1551,6 +1591,27 @@ if (categoryFilter !== 'all') {
     
     // Fonction pour mettre à jour le statut d'une tâche
     function updateTaskStatus(taskId, subtaskId, status) {
+      // Mettre à jour le statut dans le localStorage
+      let registeredTasks = getRegisteredTasks();
+      
+      if (subtaskId) {
+        // Mise à jour d'une sous-tâche
+        registeredTasks.forEach(task => {
+          if (task.taskId === taskId && task.subtaskId === subtaskId) {
+            task.status = status;
+          }
+        });
+      } else {
+        // Mise à jour d'une tâche principale
+        registeredTasks.forEach(task => {
+          if (task.taskId === taskId && (!task.subtaskId || task.subtaskId === '')) {
+            task.status = status;
+          }
+        });
+      }
+      
+      localStorage.setItem('registeredTasks', JSON.stringify(registeredTasks));
+      
       // Trouver la ligne de tâche appropriée
       let taskRow;
       
@@ -1577,18 +1638,26 @@ if (categoryFilter !== 'all') {
       }
       
       if (taskRow) {
-        // Mettre à jour le statut en fonction de la sélection
-        if (status === 'completed') {
-          // Mettre à jour le statut à Completed
-          taskRow.cells[5].innerHTML = '<span class="status-badge status-completed">Completed</span>';
+        // Mettre à jour la classe du sélecteur pour changer sa couleur
+        const statusSelect = taskRow.cells[5].querySelector('.status-select');
+        if (statusSelect) {
+          // Supprimer toutes les classes de statut existantes
+          statusSelect.classList.remove('status-not-started', 'status-in-progress', 'status-completed');
           
-          // Si c'est une sous-tâche, vérifier si toutes les sous-tâches sont complétées
-          if (subtaskId) {
+          // Ajouter la nouvelle classe de statut
+          statusSelect.classList.add('status-' + status);
+        }
+        
+        // Si c'est une sous-tâche, vérifier l'impact sur la tâche parent
+        if (subtaskId) {
+          if (status === 'completed') {
+            // Vérifier si toutes les sous-tâches sont complétées
             const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
             let allCompleted = true;
             
             for (let i = 0; i < subtaskRows.length; i++) {
-              if (!subtaskRows[i].cells[5].textContent.includes('Completed')) {
+              const subtaskSelect = subtaskRows[i].cells[5].querySelector('.status-select');
+              if (subtaskSelect && subtaskSelect.value !== 'completed') {
                 allCompleted = false;
                 break;
               }
@@ -1600,34 +1669,33 @@ if (categoryFilter !== 'all') {
               for (let i = 0; i < mainTaskRows.length; i++) {
                 const row = mainTaskRows[i];
                 if (row.cells[0].textContent.toLowerCase().includes(taskId.toLowerCase())) {
-                  row.cells[5].innerHTML = '<span class="status-badge status-completed">Completed</span>';
-                  
-                  // Mettre à jour le sélecteur pour la tâche parent
-                  const parentSelect = row.cells[6].querySelector('.status-select');
+                  const parentSelect = row.cells[5].querySelector('.status-select');
                   if (parentSelect) {
                     parentSelect.value = 'completed';
+                    parentSelect.classList.remove('status-not-started', 'status-in-progress');
+                    parentSelect.classList.add('status-completed');
+                    
+                    // Mettre à jour également dans le localStorage
+                    updateTaskStatus(taskId, '', 'completed');
                   }
                   break;
                 }
               }
             }
-          }
-        } else {
-          // Mettre à jour le statut à In Progress
-          taskRow.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
-          
-          // Si c'est une sous-tâche, mettre à jour la tâche parent
-          if (subtaskId) {
+          } else {
+            // Si une sous-tâche n'est pas complétée, la tâche parent ne peut pas être complétée
             const mainTaskRows = document.querySelectorAll('tr.main-task');
             for (let i = 0; i < mainTaskRows.length; i++) {
               const row = mainTaskRows[i];
               if (row.cells[0].textContent.toLowerCase().includes(taskId.toLowerCase())) {
-                row.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
-                
-                // Mettre à jour le sélecteur pour la tâche parent
-                const parentSelect = row.cells[6].querySelector('.status-select');
-                if (parentSelect) {
+                const parentSelect = row.cells[5].querySelector('.status-select');
+                if (parentSelect && parentSelect.value === 'completed') {
                   parentSelect.value = 'in-progress';
+                  parentSelect.classList.remove('status-not-started', 'status-completed');
+                  parentSelect.classList.add('status-in-progress');
+                  
+                  // Mettre à jour également dans le localStorage
+                  updateTaskStatus(taskId, '', 'in-progress');
                 }
                 break;
               }
@@ -1759,7 +1827,7 @@ if (categoryFilter !== 'all') {
         row.cells[2].textContent = "Not assigned yet";
         row.cells[3].textContent = "-";
         row.cells[4].textContent = "00:00";
-        row.cells[5].innerHTML = '<span class="status-badge status-pending">To do</span>';
+        row.cells[5].innerHTML = '<span class="status-badge status-not-started">Not started</span>';
         
         // Reset action buttons
         const taskId = row.classList.contains('subtask-row') 
@@ -1859,10 +1927,20 @@ if (categoryFilter !== 'all') {
       modalContent.style.width = '60%';
       modalContent.style.maxWidth = '500px';
       
+      // Définir le statut actuel (par défaut: not-started)
+      const currentStatus = task.status || 'not-started';
+      
       modalContent.innerHTML = `
         <h3>Edit Task Assignment</h3>
         <p><strong>Task:</strong> ${task.subtaskName || task.taskId}</p>
         <p><strong>Assigned to:</strong> ${task.name} (${task.title})</p>
+        
+        <label for="edit-status">Status:</label>
+        <select id="edit-status" class="status-select status-${currentStatus}" style="width: 100%; margin-bottom: 10px; padding: 8px;">
+          <option value="not-started" ${currentStatus === 'not-started' ? 'selected' : ''}>Not started</option>
+          <option value="in-progress" ${currentStatus === 'in-progress' ? 'selected' : ''}>In progress</option>
+          <option value="completed" ${currentStatus === 'completed' ? 'selected' : ''}>Completed</option>
+        </select>
         
         <label for="edit-deadline">Deadline:</label>
         <input type="date" id="edit-deadline" value="${task.deadline || ''}" style="width: 100%; margin-bottom: 10px; padding: 8px;">
@@ -1886,6 +1964,13 @@ if (categoryFilter !== 'all') {
       modal.appendChild(modalContent);
       document.body.appendChild(modal);
       
+      // Mettre à jour la classe du sélecteur de statut lorsqu'il change
+      const statusSelect = document.getElementById('edit-status');
+      statusSelect.addEventListener('change', function() {
+        statusSelect.classList.remove('status-not-started', 'status-in-progress', 'status-completed');
+        statusSelect.classList.add('status-' + this.value);
+      });
+      
       // Handle button events
       document.getElementById('update-task-btn').addEventListener('click', function() {
         // Find the exact index of this task
@@ -1896,7 +1981,8 @@ if (categoryFilter !== 'all') {
         );
         
         if (index !== -1) {
-          // Update only the editable fields
+          // Update editable fields
+          allTasks[index].status = document.getElementById('edit-status').value;
           allTasks[index].deadline = document.getElementById('edit-deadline').value;
           allTasks[index].reminderDate = document.getElementById('edit-reminder-date').value;
           allTasks[index].reminderTime = document.getElementById('edit-reminder-time').value;
