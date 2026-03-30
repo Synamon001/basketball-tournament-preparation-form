@@ -309,6 +309,29 @@
     .checkbox-container input[type="checkbox"] {
       margin-right: 8px;
     }
+    .modal {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background-color: white;
+      padding: 20px;
+      border-radius: 5px;
+      width: 60%;
+      max-width: 600px;
+    }
+    .assignee-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
   </style>
 </head>
 <body>
@@ -1329,7 +1352,7 @@
         }
         
         // User filtering
-        if (showOnlyMyTasks && currentUser) {
+if (showOnlyMyTasks && currentUser) {
           const assignedTo = row.cells[2].textContent;
           if (!assignedTo.includes(currentUser)) showRow = false;
         }
@@ -1349,7 +1372,8 @@
       const taskData = [];
       const name = document.getElementById('name').value;
       const title = document.getElementById('class').value;
-selectedTasks.forEach(taskCheckbox => {
+      
+      selectedTasks.forEach(taskCheckbox => {
         const taskId = taskCheckbox.value;
         const taskGroup = taskCheckbox.closest('.task-group');
         
@@ -1414,12 +1438,12 @@ selectedTasks.forEach(taskCheckbox => {
       return names;
     }
     
-    // Function to update a specific task in the tracking table
+    // Fonction modifiée pour mettre à jour une tâche dans le tableau de suivi
     function updateTaskInTrackingTable(task) {
       const taskId = task.taskId;
       const subtaskId = task.subtaskId;
       
-      // Find the main task row
+      // Trouver la ligne de la tâche principale
       let mainTaskRow = null;
       const mainTaskRows = document.querySelectorAll('tr.main-task');
       
@@ -1433,15 +1457,15 @@ selectedTasks.forEach(taskCheckbox => {
       }
       
       if (mainTaskRow) {
-        // If no specific subtask, update the main task row
+        // Si pas de sous-tâche spécifique, mettre à jour la ligne de la tâche principale
         if (!subtaskId) {
-          // Get all people assigned to this main task
+          // Obtenir toutes les personnes assignées à cette tâche principale
           const assignedPeople = getAllAssignedPeople(taskId, '');
           
-          // Update the cell with all assigned people
+          // Mettre à jour la cellule avec toutes les personnes assignées
           mainTaskRow.cells[2].textContent = assignedPeople.length > 0 ? assignedPeople.join(', ') : 'Not assigned yet';
           
-          // Update deadline (use the earliest one)
+          // Mettre à jour la date limite (utiliser la plus proche)
           const deadlines = getRegisteredTasks()
             .filter(t => t.taskId === taskId && (!t.subtaskId || t.subtaskId === ''))
             .map(t => t.deadline)
@@ -1452,16 +1476,16 @@ selectedTasks.forEach(taskCheckbox => {
             mainTaskRow.cells[3].textContent = deadlines[0];
           }
           
-          // Update status
+          // Mettre à jour le statut
           mainTaskRow.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
           
-          // Update actions
+          // Mettre à jour les actions
           mainTaskRow.cells[6].innerHTML = `
             <button class="action-btn" onclick="editTask('${taskId}')">Edit</button>
-            <button class="action-btn remove-btn" onclick="removeTask('${taskId}', '', '${task.name}')">Remove</button>
+            <button class="action-btn complete-btn" onclick="completeTask('${taskId}', '')">Complete</button>
           `;
         } else {
-          // Find and update the specific subtask row
+          // Trouver et mettre à jour la ligne de la sous-tâche spécifique
           const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
           
           for (let i = 0; i < subtaskRows.length; i++) {
@@ -1469,13 +1493,13 @@ selectedTasks.forEach(taskCheckbox => {
             const subtaskCell = row.cells[0];
             
             if (subtaskCell && subtaskCell.textContent.toLowerCase().includes(task.subtaskName.toLowerCase())) {
-              // Get all people assigned to this micro-task
+              // Obtenir toutes les personnes assignées à cette micro-tâche
               const assignedPeople = getAllAssignedPeople(taskId, subtaskId);
               
-              // Update the cell with all assigned people
+              // Mettre à jour la cellule avec toutes les personnes assignées
               row.cells[2].textContent = assignedPeople.length > 0 ? assignedPeople.join(', ') : 'Not assigned yet';
               
-              // Update deadline (use the earliest one)
+              // Mettre à jour la date limite (utiliser la plus proche)
               const deadlines = getRegisteredTasks()
                 .filter(t => t.taskId === taskId && t.subtaskId === subtaskId)
                 .map(t => t.deadline)
@@ -1486,24 +1510,25 @@ selectedTasks.forEach(taskCheckbox => {
                 row.cells[3].textContent = deadlines[0];
               }
               
-              // Update time if provided
+              // Mettre à jour l'heure si fournie
               if (task.reminderTime) {
                 row.cells[4].textContent = task.reminderTime;
               }
               
-              // Update status
+              // Mettre à jour le statut
               row.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
               
-              // Update actions
+              // Mettre à jour les actions
               row.cells[6].innerHTML = `
                 <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
-                <button class="action-btn remove-btn" onclick="removeTask('${taskId}', '${subtaskId}', '${task.name}')">Remove</button>
+                <button class="action-btn complete-btn" onclick="completeTask('${taskId}', '${subtaskId}')">Complete</button>
+                <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
               `;
               
-              // Also update the parent task status
+              // Mettre à jour également le statut de la tâche parent
               mainTaskRow.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
               
-              // Expand the subtasks to show the assigned task
+              // Développer les sous-tâches pour afficher la tâche assignée
               const expandBtn = mainTaskRow.querySelector('.expand-btn');
               if (expandBtn && expandBtn.textContent === '+') {
                 expandBtn.click();
@@ -1511,6 +1536,169 @@ selectedTasks.forEach(taskCheckbox => {
               
               break;
             }
+          }
+        }
+      }
+    }
+    
+    // Nouvelle fonction pour afficher toutes les personnes assignées à une tâche
+    function viewAssignees(taskId, subtaskId) {
+      const tasks = getRegisteredTasks().filter(t => 
+        t.taskId === taskId && t.subtaskId === subtaskId
+      );
+      
+      if (tasks.length === 0) {
+        alert('No one is assigned to this task.');
+        return;
+      }
+      
+      // Créer une fenêtre modale pour afficher toutes les personnes assignées
+      const modal = document.createElement('div');
+      modal.style.position = 'fixed';
+      modal.style.left = '0';
+      modal.style.top = '0';
+      modal.style.width = '100%';
+      modal.style.height = '100%';
+      modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+      modal.style.display = 'flex';
+      modal.style.justifyContent = 'center';
+      modal.style.alignItems = 'center';
+      modal.style.zIndex = '1000';
+      
+      // Trouver le nom de la tâche
+      let taskName = '';
+      const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
+      for (let i = 0; i < subtaskRows.length; i++) {
+        const row = subtaskRows[i];
+        if (row.cells[0].textContent.toLowerCase().includes(tasks[0].subtaskName.toLowerCase())) {
+          taskName = row.cells[0].textContent.trim();
+          break;
+        }
+      }
+      
+      const modalContent = document.createElement('div');
+      modalContent.style.backgroundColor = 'white';
+      modalContent.style.padding = '20px';
+      modalContent.style.borderRadius = '5px';
+      modalContent.style.width = '60%';
+      modalContent.style.maxWidth = '600px';
+      
+      // Créer le contenu de la fenêtre modale
+      let modalHTML = `
+        <h3>People Assigned to: ${taskName}</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+          <thead>
+            <tr>
+              <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #3498db; color: white;">Name</th>
+              <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #3498db; color: white;">Title</th>
+              <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #3498db; color: white;">Deadline</th>
+              <th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #3498db; color: white;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      
+      tasks.forEach((task, index) => {
+        modalHTML += `
+          <tr ${index % 2 === 0 ? 'style="background-color: #f2f2f2;"' : ''}>
+            <td style="border: 1px solid #ddd; padding: 8px;">${task.name}</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">${task.title}</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">${task.deadline || '-'}</td>
+            <td style="border: 1px solid #ddd; padding: 8px;">
+              <button onclick="removeTask('${taskId}', '${subtaskId}', '${task.name}')" 
+                      style="background-color: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
+                Remove
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      
+      modalHTML += `
+          </tbody>
+        </table>
+        <div style="text-align: right; margin-top: 15px;">
+          <button id="close-modal-btn" style="background-color: #95a5a6; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer;">Close</button>
+        </div>
+      `;
+      
+      modalContent.innerHTML = modalHTML;
+      modal.appendChild(modalContent);
+      document.body.appendChild(modal);
+      
+      // Gérer l'événement du bouton de fermeture
+      document.getElementById('close-modal-btn').addEventListener('click', function() {
+        document.body.removeChild(modal);
+      });
+    }
+    
+    // Fonction pour marquer une tâche comme terminée
+    function completeTask(taskId, subtaskId) {
+      if (confirm('Mark this task as completed?')) {
+        // Trouver la ligne de tâche appropriée
+        let taskRow;
+        
+        if (!subtaskId) {
+          // Tâche principale
+          const mainTaskRows = document.querySelectorAll('tr.main-task');
+          for (let i = 0; i < mainTaskRows.length; i++) {
+            const row = mainTaskRows[i];
+            if (row.cells[0].textContent.toLowerCase().includes(taskId.toLowerCase())) {
+              taskRow = row;
+              break;
+            }
+          }
+        } else {
+          // Sous-tâche
+          const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
+          for (let i = 0; i < subtaskRows.length; i++) {
+            const row = subtaskRows[i];
+            if (row.cells[0].textContent.toLowerCase().includes(subtaskId.toLowerCase())) {
+              taskRow = row;
+              break;
+            }
+          }
+        }
+        
+        if (taskRow) {
+          // Mettre à jour le statut
+          taskRow.cells[5].innerHTML = '<span class="status-badge status-completed">Completed</span>';
+          
+          // Mettre à jour les actions
+          taskRow.cells[6].innerHTML = `
+            <button class="action-btn" onclick="editTask('${subtaskId || taskId}')">Edit</button>
+          `;
+          
+          // Si c'est une sous-tâche, vérifier si toutes les sous-tâches sont terminées
+          if (subtaskId) {
+            checkAllSubtasksCompleted(taskId);
+          }
+        }
+      }
+    }
+    
+    // Vérifier si toutes les sous-tâches sont terminées
+    function checkAllSubtasksCompleted(taskId) {
+      const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
+      let allCompleted = true;
+      
+      for (let i = 0; i < subtaskRows.length; i++) {
+        const statusCell = subtaskRows[i].cells[5];
+        if (!statusCell.textContent.includes('Completed')) {
+          allCompleted = false;
+          break;
+        }
+      }
+      
+      if (allCompleted) {
+        // Trouver la ligne de la tâche principale
+        const mainTaskRows = document.querySelectorAll('tr.main-task');
+        for (let i = 0; i < mainTaskRows.length; i++) {
+          const row = mainTaskRows[i];
+          if (row.cells[0].textContent.toLowerCase().includes(taskId.toLowerCase())) {
+            // Mettre à jour le statut de la tâche principale
+            row.cells[5].innerHTML = '<span class="status-badge status-completed">Completed</span>';
+            break;
           }
         }
       }
