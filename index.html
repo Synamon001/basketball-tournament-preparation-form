@@ -1926,6 +1926,52 @@ if (showOnlyMyTasks && currentUser) {
       }
     }
     
+    // Function to reset the registration form
+    function resetRegistrationForm() {
+      // Uncheck all task checkboxes
+      const taskCheckboxes = document.querySelectorAll('input.task-checkbox');
+      taskCheckboxes.forEach(checkbox => {
+        checkbox.checked = false;
+      });
+      
+      // Reset all select elements to default option
+      const selectElements = document.querySelectorAll('select[id$="-subtask"]');
+      selectElements.forEach(select => {
+        select.selectedIndex = 0;
+      });
+      
+      // Clear all date inputs
+      const dateInputs = document.querySelectorAll('input[type="date"]');
+      dateInputs.forEach(input => {
+        input.value = '';
+      });
+      
+      // Clear all time inputs
+      const timeInputs = document.querySelectorAll('input[type="time"]');
+      timeInputs.forEach(input => {
+        input.value = '';
+      });
+      
+      // Clear all text areas
+      const textAreas = document.querySelectorAll('textarea');
+      textAreas.forEach(textarea => {
+        textarea.value = '';
+      });
+      
+      // Hide task details sections
+      const taskDetails = document.querySelectorAll('.task-details');
+      taskDetails.forEach(detail => {
+        detail.style.display = 'none';
+      });
+      
+      // Clear error message
+      const errorMessage = document.getElementById('error-message');
+      if (errorMessage) {
+        errorMessage.style.display = 'none';
+        errorMessage.textContent = '';
+      }
+    }
+    
     // Function to handle form submission with validation
     document.getElementById('submit-registration').addEventListener('click', function() {
       // Get form values
@@ -1994,7 +2040,25 @@ if (showOnlyMyTasks && currentUser) {
           localStorage.setItem('currentUser', newUser);
           document.getElementById('current-user-display').textContent = `Current user: ${newUser}`;
           document.getElementById('name').value = newUser;
+          
+          // Reset the registration form for the new user
+          resetRegistrationForm();
         }
+      });
+      
+      // Add click event listeners to task checkboxes to show/hide task details
+      const taskCheckboxes = document.querySelectorAll('input.task-checkbox');
+      taskCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          const taskGroup = this.closest('.task-group');
+          const taskDetails = taskGroup.querySelector('.task-details');
+          
+          if (this.checked) {
+            taskDetails.style.display = 'block';
+          } else {
+            taskDetails.style.display = 'none';
+          }
+        });
       });
     });
   </script>
