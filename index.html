@@ -332,6 +332,14 @@
       max-height: 300px;
       overflow-y: auto;
     }
+    .status-select {
+      padding: 5px;
+      border-radius: 3px;
+      border: 1px solid #ddd;
+      background-color: #f8f9fa;
+      margin-right: 5px;
+      font-size: 12px;
+    }
   </style>
 </head>
 <body>
@@ -1338,21 +1346,13 @@
         let showRow = true;
         
         // Status filtering
-        if (statusFilter !== 'all') {
-          const statusText = row.cells[5].textContent.toLowerCase();
-          if (statusFilter === 'pending' && !statusText.includes('to do')) showRow = false;
-          if (statusFilter === 'in-progress' && !statusText.includes('in progress')) showRow = false;
-          if (statusFilter === 'completed' && !statusText.includes('completed')) showRow = false;
-        }
-        
-        // Category filtering
-        if (categoryFilter !== 'all') {
+if (categoryFilter !== 'all') {
           const categoryText = row.cells[1].textContent.toLowerCase();
           if (!categoryText.includes(categoryFilter.toLowerCase())) showRow = false;
         }
         
         // User filtering
- if (showOnlyMyTasks && currentUser) {
+        if (showOnlyMyTasks && currentUser) {
           const assignedTo = row.cells[2].textContent;
           if (!assignedTo.includes(currentUser)) showRow = false;
         }
@@ -1479,10 +1479,14 @@
           // Mettre à jour le statut
           mainTaskRow.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
           
-          // Mettre à jour les actions
+          // Mettre à jour les actions avec un sélecteur
           mainTaskRow.cells[6].innerHTML = `
             <button class="action-btn" onclick="editTask('${taskId}')">Edit</button>
-            <button class="action-btn complete-btn" onclick="completeTask('${taskId}', '')">Complete</button>
+            <select class="status-select" onchange="updateTaskStatus('${taskId}', '', this.value)">
+              <option value="in-progress" selected>Select status</option>
+              <option value="completed">Complete</option>
+              <option value="in-progress">Incomplete</option>
+            </select>
           `;
         } else {
           // Trouver et mettre à jour la ligne de la sous-tâche spécifique
@@ -1518,10 +1522,14 @@
               // Mettre à jour le statut
               row.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
               
-              // Mettre à jour les actions
+              // Mettre à jour les actions avec un sélecteur
               row.cells[6].innerHTML = `
                 <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
-                <button class="action-btn complete-btn" onclick="completeTask('${taskId}', '${subtaskId}')">Complete</button>
+                <select class="status-select" onchange="updateTaskStatus('${taskId}', '${subtaskId}', this.value)">
+                  <option value="in-progress" selected>Select status</option>
+                  <option value="completed">Complete</option>
+                  <option value="in-progress">Incomplete</option>
+                </select>
                 <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
               `;
               
@@ -1535,6 +1543,94 @@
               }
               
               break;
+            }
+          }
+        }
+      }
+    }
+    
+    // Fonction pour mettre à jour le statut d'une tâche
+    function updateTaskStatus(taskId, subtaskId, status) {
+      // Trouver la ligne de tâche appropriée
+      let taskRow;
+      
+      if (!subtaskId) {
+        // Tâche principale
+        const mainTaskRows = document.querySelectorAll('tr.main-task');
+        for (let i = 0; i < mainTaskRows.length; i++) {
+          const row = mainTaskRows[i];
+          if (row.cells[0].textContent.toLowerCase().includes(taskId.toLowerCase())) {
+            taskRow = row;
+            break;
+          }
+        }
+      } else {
+        // Sous-tâche
+        const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
+        for (let i = 0; i < subtaskRows.length; i++) {
+          const row = subtaskRows[i];
+          if (row.cells[0].textContent.toLowerCase().includes(subtaskId.toLowerCase())) {
+            taskRow = row;
+            break;
+          }
+        }
+      }
+      
+      if (taskRow) {
+        // Mettre à jour le statut en fonction de la sélection
+        if (status === 'completed') {
+          // Mettre à jour le statut à Completed
+          taskRow.cells[5].innerHTML = '<span class="status-badge status-completed">Completed</span>';
+          
+          // Si c'est une sous-tâche, vérifier si toutes les sous-tâches sont complétées
+          if (subtaskId) {
+            const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
+            let allCompleted = true;
+            
+            for (let i = 0; i < subtaskRows.length; i++) {
+              if (!subtaskRows[i].cells[5].textContent.includes('Completed')) {
+                allCompleted = false;
+                break;
+              }
+            }
+            
+            if (allCompleted) {
+              // Mettre à jour la tâche parent comme complétée
+              const mainTaskRows = document.querySelectorAll('tr.main-task');
+              for (let i = 0; i < mainTaskRows.length; i++) {
+                const row = mainTaskRows[i];
+                if (row.cells[0].textContent.toLowerCase().includes(taskId.toLowerCase())) {
+                  row.cells[5].innerHTML = '<span class="status-badge status-completed">Completed</span>';
+                  
+                  // Mettre à jour le sélecteur pour la tâche parent
+                  const parentSelect = row.cells[6].querySelector('.status-select');
+                  if (parentSelect) {
+                    parentSelect.value = 'completed';
+                  }
+                  break;
+                }
+              }
+            }
+          }
+        } else {
+          // Mettre à jour le statut à In Progress
+          taskRow.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
+          
+          // Si c'est une sous-tâche, mettre à jour la tâche parent
+          if (subtaskId) {
+            const mainTaskRows = document.querySelectorAll('tr.main-task');
+            for (let i = 0; i < mainTaskRows.length; i++) {
+              const row = mainTaskRows[i];
+              if (row.cells[0].textContent.toLowerCase().includes(taskId.toLowerCase())) {
+                row.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
+                
+                // Mettre à jour le sélecteur pour la tâche parent
+                const parentSelect = row.cells[6].querySelector('.status-select');
+                if (parentSelect) {
+                  parentSelect.value = 'in-progress';
+                }
+                break;
+              }
             }
           }
         }
@@ -1630,143 +1726,6 @@
       document.getElementById('close-modal-btn').addEventListener('click', function() {
         document.body.removeChild(modal);
       });
-    }
-    
-    // Fonction pour marquer une tâche comme complétée ou incomplète
-    function completeTask(taskId, subtaskId) {
-      // Trouver la ligne de tâche appropriée
-      let taskRow;
-      
-      if (!subtaskId) {
-        // Tâche principale
-        const mainTaskRows = document.querySelectorAll('tr.main-task');
-        for (let i = 0; i < mainTaskRows.length; i++) {
-          const row = mainTaskRows[i];
-          if (row.cells[0].textContent.toLowerCase().includes(taskId.toLowerCase())) {
-            taskRow = row;
-            break;
-          }
-        }
-      } else {
-        // Sous-tâche
-        const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
-        for (let i = 0; i < subtaskRows.length; i++) {
-          const row = subtaskRows[i];
-          if (row.cells[0].textContent.toLowerCase().includes(subtaskId.toLowerCase())) {
-            taskRow = row;
-            break;
-          }
-        }
-      }
-      
-      if (taskRow) {
-        // Vérifier l'état actuel de la tâche
-        const statusCell = taskRow.cells[5];
-        const isCompleted = statusCell.textContent.includes('Completed');
-        
-        if (isCompleted) {
-          // Changer de Completed à In Progress
-          statusCell.innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
-          
-          // Mettre à jour le bouton pour afficher "Complete"
-          const actionCell = taskRow.cells[6];
-          const editButton = actionCell.querySelector('button:first-child');
-          const completeButton = document.createElement('button');
-          completeButton.className = 'action-btn complete-btn';
-          completeButton.textContent = 'Complete';
-          completeButton.onclick = function() { completeTask(taskId, subtaskId); };
-          
-          // Remplacer le bouton "Incomplete" par "Complete"
-          actionCell.innerHTML = '';
-          actionCell.appendChild(editButton);
-          actionCell.appendChild(completeButton);
-          
-          // Ajouter le bouton "View All" si c'est une sous-tâche
-          if (subtaskId) {
-            const viewAllButton = document.createElement('button');
-            viewAllButton.className = 'action-btn';
-            viewAllButton.textContent = 'View All';
-            viewAllButton.onclick = function() { viewAssignees(taskId, subtaskId); };
-            actionCell.appendChild(viewAllButton);
-          }
-          
-          // Si c'est une sous-tâche, mettre à jour la tâche parent
-          if (subtaskId) {
-            const mainTaskRows = document.querySelectorAll('tr.main-task');
-            for (let i = 0; i < mainTaskRows.length; i++) {
-              const row = mainTaskRows[i];
-              if (row.cells[0].textContent.toLowerCase().includes(taskId.toLowerCase())) {
-                row.cells[5].innerHTML = '<span class="status-badge status-in-progress">In progress</span>';
-                
-                // Mettre à jour le bouton pour la tâche parent
-                const parentActionCell = row.cells[6];
-                parentActionCell.innerHTML = `
-                  <button class="action-btn" onclick="editTask('${taskId}')">Edit</button>
-                  <button class="action-btn complete-btn" onclick="completeTask('${taskId}', '')">Complete</button>
-                `;
-                break;
-              }
-            }
-          }
-        } else {
-          // Changer de In Progress à Completed
-          statusCell.innerHTML = '<span class="status-badge status-completed">Completed</span>';
-          
-          // Mettre à jour le bouton pour afficher "Incomplete"
-          const actionCell = taskRow.cells[6];
-          const editButton = actionCell.querySelector('button:first-child');
-          const incompleteButton = document.createElement('button');
-          incompleteButton.className = 'action-btn remove-btn';
-          incompleteButton.textContent = 'Incomplete';
-          incompleteButton.onclick = function() { completeTask(taskId, subtaskId); };
-          
-          // Remplacer le bouton "Complete" par "Incomplete"
-          actionCell.innerHTML = '';
-          actionCell.appendChild(editButton);
-          actionCell.appendChild(incompleteButton);
-          
-          // Ajouter le bouton "View All" si c'est une sous-tâche
-          if (subtaskId) {
-            const viewAllButton = document.createElement('button');
-            viewAllButton.className = 'action-btn';
-            viewAllButton.textContent = 'View All';
-            viewAllButton.onclick = function() { viewAssignees(taskId, subtaskId); };
-            actionCell.appendChild(viewAllButton);
-          }
-          
-          // Si c'est une sous-tâche, vérifier si toutes les sous-tâches sont complétées
-          if (subtaskId) {
-            const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
-            let allCompleted = true;
-            
-            for (let i = 0; i < subtaskRows.length; i++) {
-              if (!subtaskRows[i].cells[5].textContent.includes('Completed')) {
-                allCompleted = false;
-                break;
-              }
-            }
-            
-            if (allCompleted) {
-              // Mettre à jour la tâche parent comme complétée
-              const mainTaskRows = document.querySelectorAll('tr.main-task');
-              for (let i = 0; i < mainTaskRows.length; i++) {
-                const row = mainTaskRows[i];
-                if (row.cells[0].textContent.toLowerCase().includes(taskId.toLowerCase())) {
-                  row.cells[5].innerHTML = '<span class="status-badge status-completed">Completed</span>';
-                  
-                  // Mettre à jour le bouton pour la tâche parent
-                  const parentActionCell = row.cells[6];
-                  parentActionCell.innerHTML = `
-                    <button class="action-btn" onclick="editTask('${taskId}')">Edit</button>
-                    <button class="action-btn remove-btn" onclick="completeTask('${taskId}', '')">Incomplete</button>
-                  `;
-                  break;
-                }
-              }
-            }
-          }
-        }
-      }
     }
     
     // Function to remove a task assignment
