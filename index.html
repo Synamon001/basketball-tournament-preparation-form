@@ -64,6 +64,7 @@
     input[type="text"], 
     input[type="date"],
     input[type="time"],
+    input[type="email"],
     select,
     textarea {
       width: 100%;
@@ -380,13 +381,6 @@
 <body>
   <h1>BASKETBALL TOURNAMENT STAFF SIGN UP FORM</h1>
   
-  <!-- Event Information -->
-  <div class="event-info">
-    <p><strong>Event Date:</strong> [Date]</p>
-    <p><strong>Location:</strong> [Location]</p>
-    <p><strong>Organizer:</strong> [Organizer]</p>
-  </div>
-  
   <!-- User Controls -->
   <div class="user-controls">
     <span id="current-user-display" class="user-display"></span>
@@ -404,137 +398,284 @@
     <div id="registration" class="tabcontent" style="display: block;">
       <h2>Register for Micro-Tasks</h2>
       
+      <!-- Event Information -->
+      <div class="event-info">
+        <p><strong>Date:</strong> To be determined</p>
+        <p><strong>Time:</strong> After lunch until 2:30 PM</p>
+        <p><strong>Location:</strong> School gymnasium and adjacent spaces</p>
+        <p><strong>Activities:</strong> Basketball tournament, game fair, food sales at the canteen</p>
+        <p><strong>Entry:</strong> Tickets to be purchased (price to be determined)</p>
+        <p>This event is organized by students and includes a basketball tournament (including a teachers' team) as well as a game fair. B365 students will also run a canteen to sell food to players and spectators.</p>
+      </div>
+      
       <div class="form-section">
         <h3>Personal Information</h3>
         <label for="name">Full Name <span class="required-label">*</span></label>
         <input type="text" id="name" required>
         
-        <label for="class">Title/Role <span class="required-label">*</span></label>
+        <label for="email">Email <span class="required-label">*</span></label>
+        <input type="email" id="email" required>
+        
+        <label for="class">Class <span class="required-label">*</span></label>
         <input type="text" id="class" required>
+        
+        <h3>Skills (select all that apply)</h3>
+        <div class="checkbox-container">
+          <input type="checkbox" id="skill-communication" class="skill-checkbox">
+          <label for="skill-communication">Communication</label>
+        </div>
+        <div class="checkbox-container">
+          <input type="checkbox" id="skill-organization" class="skill-checkbox">
+          <label for="skill-organization">Organization</label>
+        </div>
+        <div class="checkbox-container">
+          <input type="checkbox" id="skill-technical" class="skill-checkbox">
+          <label for="skill-technical">Technical/AV</label>
+        </div>
+        <div class="checkbox-container">
+          <input type="checkbox" id="skill-artistic" class="skill-checkbox">
+          <label for="skill-artistic">Artistic</label>
+        </div>
+        <div class="checkbox-container">
+          <input type="checkbox" id="skill-sports" class="skill-checkbox">
+          <label for="skill-sports">Sports</label>
+        </div>
+        <div class="checkbox-container">
+          <input type="checkbox" id="skill-food" class="skill-checkbox">
+          <label for="skill-food">Food Service</label>
+        </div>
+        <div class="checkbox-container">
+          <input type="checkbox" id="skill-financial" class="skill-checkbox">
+          <label for="skill-financial">Financial Management</label>
+        </div>
       </div>
       
-      <!-- Task Groups -->
-      <div class="category-header">Event Preparation</div>
+      <!-- Task Categories -->
+      <div class="category-header">Tasks Before the Event</div>
       
       <div class="task-group">
         <div class="checkbox-container">
           <input type="checkbox" id="task1" class="task-checkbox" value="task1">
-          <label for="task1">Gymnasium Preparation</label>
+          <label for="task1">Administration and Coordination <span class="skill-tag">Organization</span> <span class="skill-tag">Communication</span> <span class="priority-high">High Priority</span></label>
         </div>
         <div class="task-details" id="task1-details">
-          <p>Setting up sports equipment and preparing play areas.</p>
-          <label for="task1-subtask">Specific subtask:</label>
+          <p>Description: Obtain all necessary administrative approvals for the event.</p>
+          <label for="task1-subtask">Specific micro-task:</label>
           <select id="task1-subtask">
-            <option value="">-- Select a subtask --</option>
-            <option value="subtask1-1">Basketball hoops installation</option>
-            <option value="subtask1-2">Floor marking</option>
-            <option value="subtask1-3">Locker room preparation</option>
+            <option value="">-- Select a micro-task --</option>
+            <option value="subtask1-1">Prepare authorization request documents</option>
+            <option value="subtask1-2">Coordinate with administration</option>
+            <option value="subtask1-3">Obtain gymnasium authorizations</option>
+            <option value="subtask1-4">Follow up on approvals</option>
+            <option value="subtask1-5">Communicate administrative decisions</option>
           </select>
           
-          <label for="task1-deadline">Deadline:</label>
+          <label for="task1-deadline">Deadline to complete this task:</label>
           <input type="date" id="task1-deadline">
           
-          <label for="task1-reminder-date">Reminder date:</label>
+          <label for="task1-reminder-date">Your personal reminder date:</label>
           <input type="date" id="task1-reminder-date">
           
           <label for="task1-reminder-time">Reminder time:</label>
           <input type="time" id="task1-reminder-time">
           
-          <label for="task1-notes">Notes:</label>
+          <label for="task1-notes">Additional notes:</label>
           <textarea id="task1-notes" rows="3"></textarea>
+          
+          <p><em>Skills developed: Professional communication, administrative follow-up, organization</em></p>
         </div>
       </div>
+      
+      <div class="category-header">Tasks During the Event</div>
       
       <div class="task-group">
         <div class="checkbox-container">
           <input type="checkbox" id="task2" class="task-checkbox" value="task2">
-          <label for="task2">Registration Management</label>
+          <label for="task2">Setup and Preparation <span class="skill-tag">Organization</span></label>
         </div>
         <div class="task-details" id="task2-details">
-          <p>Managing team and participant registrations.</p>
-          <label for="task2-subtask">Specific subtask:</label>
+          <p>Description: Prepare the venue before the start of the event (after lunch).</p>
+          <label for="task2-subtask">Specific micro-task:</label>
           <select id="task2-subtask">
-            <option value="">-- Select a subtask --</option>
-            <option value="subtask2-1">Team registration</option>
-            <option value="subtask2-2">License verification</option>
-            <option value="subtask2-3">Badge preparation</option>
+            <option value="">-- Select a micro-task --</option>
+            <option value="subtask2-1">Set up sports equipment</option>
+            <option value="subtask2-2">Set up game fair booths</option>
+            <option value="subtask2-3">Install signage</option>
+            <option value="subtask2-4">Prepare the canteen area</option>
+            <option value="subtask2-5">Verify installations</option>
           </select>
           
-          <label for="task2-deadline">Deadline:</label>
+          <label for="task2-deadline">Deadline to complete this task:</label>
           <input type="date" id="task2-deadline">
           
-          <label for="task2-reminder-date">Reminder date:</label>
+          <label for="task2-reminder-date">Your personal reminder date:</label>
           <input type="date" id="task2-reminder-date">
           
           <label for="task2-reminder-time">Reminder time:</label>
           <input type="time" id="task2-reminder-time">
           
-          <label for="task2-notes">Notes:</label>
+          <label for="task2-notes">Additional notes:</label>
           <textarea id="task2-notes" rows="3"></textarea>
+          
+          <p><em>Skills developed: Logistics organization, teamwork, problem solving</em></p>
         </div>
       </div>
       
-      <div class="category-header">Event Day</div>
+      <div class="category-header">Tasks After the Event</div>
       
       <div class="task-group">
         <div class="checkbox-container">
           <input type="checkbox" id="task3" class="task-checkbox" value="task3">
-          <label for="task3">Refereeing <span class="skill-tag">Skill required</span></label>
+          <label for="task3">Cleanup and Teardown <span class="skill-tag">Organization</span> <span class="priority-high">High Priority</span></label>
         </div>
         <div class="task-details" id="task3-details">
-          <p>Refereeing basketball matches.</p>
-          <label for="task3-subtask">Specific subtask:</label>
+          <p>Description: Clean and restore all spaces used during the event.</p>
+          <label for="task3-subtask">Specific micro-task:</label>
           <select id="task3-subtask">
-            <option value="">-- Select a subtask --</option>
-            <option value="subtask3-1">Court 1 refereeing</option>
-            <option value="subtask3-2">Court 2 refereeing</option>
-            <option value="subtask3-3">Scoring table</option>
+            <option value="">-- Select a micro-task --</option>
+            <option value="subtask3-1">Dismantle game fair booths</option>
+            <option value="subtask3-2">Clean the gymnasium floor</option>
+            <option value="subtask3-3">Return sports equipment</option>
+            <option value="subtask3-4">Clean the canteen area</option>
+            <option value="subtask3-5">Remove signage and decorations</option>
+            <option value="subtask3-6">Final verification of spaces</option>
           </select>
           
-          <label for="task3-deadline">Deadline:</label>
+          <label for="task3-deadline">Deadline to complete this task:</label>
           <input type="date" id="task3-deadline">
           
-          <label for="task3-reminder-date">Reminder date:</label>
+          <label for="task3-reminder-date">Your personal reminder date:</label>
           <input type="date" id="task3-reminder-date">
           
           <label for="task3-reminder-time">Reminder time:</label>
           <input type="time" id="task3-reminder-time">
           
-          <label for="task3-notes">Notes:</label>
+          <label for="task3-notes">Additional notes:</label>
           <textarea id="task3-notes" rows="3"></textarea>
+          
+          <p><em>Skills developed: Organization, teamwork, responsibility</em></p>
         </div>
       </div>
       
       <div class="task-group">
         <div class="checkbox-container">
           <input type="checkbox" id="task4" class="task-checkbox" value="task4">
-          <label for="task4">Refreshments and Food <span class="priority-high">High priority</span></label>
+          <label for="task4">Financial Reporting <span class="skill-tag">Finance</span> <span class="skill-tag">Organization</span></label>
         </div>
         <div class="task-details" id="task4-details">
-          <p>Managing refreshments and food during the event.</p>
-          <label for="task4-subtask">Specific subtask:</label>
+          <p>Description: Compile and report on the financial aspects of the event.</p>
+          <label for="task4-subtask">Specific micro-task:</label>
           <select id="task4-subtask">
-            <option value="">-- Select a subtask --</option>
-            <option value="subtask4-1">Beverage service</option>
-            <option value="subtask4-2">Sandwich preparation</option>
-            <option value="subtask4-3">Cashier</option>
+            <option value="">-- Select a micro-task --</option>
+            <option value="subtask4-1">Collect receipts and expenses</option>
+            <option value="subtask4-2">Calculate profits/losses</option>
+            <option value="subtask4-3">Prepare financial summary</option>
           </select>
           
-          <label for="task4-deadline">Deadline:</label>
+          <label for="task4-deadline">Deadline to complete this task:</label>
           <input type="date" id="task4-deadline">
           
-          <label for="task4-reminder-date">Reminder date:</label>
+          <label for="task4-reminder-date">Your personal reminder date:</label>
           <input type="date" id="task4-reminder-date">
           
           <label for="task4-reminder-time">Reminder time:</label>
           <input type="time" id="task4-reminder-time">
           
-          <label for="task4-notes">Notes:</label>
+          <label for="task4-notes">Additional notes:</label>
           <textarea id="task4-notes" rows="3"></textarea>
         </div>
       </div>
       
-      <button id="register-btn" class="submit-btn">Register for Selected Tasks</button>
+      <div class="task-group">
+        <div class="checkbox-container">
+          <input type="checkbox" id="task5" class="task-checkbox" value="task5">
+          <label for="task5">Feedback Collection and Analysis <span class="skill-tag">Communication</span> <span class="skill-tag">Organization</span></label>
+        </div>
+        <div class="task-details" id="task5-details">
+          <p>Description: Collect and analyze feedback from participants and attendees.</p>
+          <label for="task5-subtask">Specific micro-task:</label>
+          <select id="task5-subtask">
+            <option value="">-- Select a micro-task --</option>
+            <option value="subtask5-1">Create feedback forms</option>
+            <option value="subtask5-2">Distribute and collect forms</option>
+            <option value="subtask5-3">Analyze feedback data</option>
+            <option value="subtask5-4">Prepare feedback summary</option>
+          </select>
+          
+          <label for="task5-deadline">Deadline to complete this task:</label>
+          <input type="date" id="task5-deadline">
+          
+          <label for="task5-reminder-date">Your personal reminder date:</label>
+          <input type="date" id="task5-reminder-date">
+          
+          <label for="task5-reminder-time">Reminder time:</label>
+          <input type="time" id="task5-reminder-time">
+          
+          <label for="task5-notes">Additional notes:</label>
+          <textarea id="task5-notes" rows="3"></textarea>
+        </div>
+      </div>
+      
+      <div class="task-group">
+        <div class="checkbox-container">
+          <input type="checkbox" id="task6" class="task-checkbox" value="task6">
+          <label for="task6">Thank You and Recognition <span class="skill-tag">Communication</span></label>
+        </div>
+        <div class="task-details" id="task6-details">
+          <p>Description: Send thank you messages and recognize contributors.</p>
+          <label for="task6-subtask">Specific micro-task:</label>
+          <select id="task6-subtask">
+            <option value="">-- Select a micro-task --</option>
+            <option value="subtask6-1">Draft thank you messages</option>
+            <option value="subtask6-2">Identify all contributors</option>
+            <option value="subtask6-3">Send thank you communications</option>
+          </select>
+          
+          <label for="task6-deadline">Deadline to complete this task:</label>
+          <input type="date" id="task6-deadline">
+          
+          <label for="task6-reminder-date">Your personal reminder date:</label>
+          <input type="date" id="task6-reminder-date">
+          
+          <label for="task6-reminder-time">Reminder time:</label>
+          <input type="time" id="task6-reminder-time">
+          
+          <label for="task6-notes">Additional notes:</label>
+          <textarea id="task6-notes" rows="3"></textarea>
+        </div>
+      </div>
+      
+      <div class="task-group">
+        <div class="checkbox-container">
+          <input type="checkbox" id="task7" class="task-checkbox" value="task7">
+          <label for="task7">Final Event Report <span class="skill-tag">Communication</span> <span class="skill-tag">Organization</span></label>
+        </div>
+        <div class="task-details" id="task7-details">
+          <p>Description: Compile a comprehensive report on the entire event.</p>
+          <label for="task7-subtask">Specific micro-task:</label>
+          <select id="task7-subtask">
+            <option value="">-- Select a micro-task --</option>
+            <option value="subtask7-1">Gather information from all teams</option>
+            <option value="subtask7-2">Draft report sections</option>
+            <option value="subtask7-3">Compile final report</option>
+            <option value="subtask7-4">Present report to stakeholders</option>
+          </select>
+          
+          <label for="task7-deadline">Deadline to complete this task:</label>
+          <input type="date" id="task7-deadline">
+          
+          <label for="task7-reminder-date">Your personal reminder date:</label>
+          <input type="date" id="task7-reminder-date">
+          
+          <label for="task7-reminder-time">Reminder time:</label>
+          <input type="time" id="task7-reminder-time">
+          
+          <label for="task7-notes">Additional notes:</label>
+          <textarea id="task7-notes" rows="3"></textarea>
+        </div>
+      </div>
+      
+      <button id="register-btn" class="submit-btn">Submit my registration</button>
       <div id="error-message" class="error-message"></div>
     </div>
     
@@ -557,8 +698,9 @@
         
         <select id="category-filter" onchange="filterTasks()">
           <option value="all">All categories</option>
-          <option value="preparation">Event Preparation</option>
-          <option value="event-day">Event Day</option>
+          <option value="Tasks Before the Event">Tasks Before the Event</option>
+          <option value="Tasks During the Event">Tasks During the Event</option>
+          <option value="Tasks After the Event">Tasks After the Event</option>
         </select>
         
         <div class="checkbox-container">
@@ -597,7 +739,7 @@
   </div>
   
   <script>
-    // Fonction pour obtenir l'utilisateur actuel
+    // Function to get current user
     function getCurrentUser() {
       let currentUser = localStorage.getItem('currentUser');
       
@@ -719,7 +861,14 @@
     function collectTaskData(selectedTasks) {
       const taskData = [];
       const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
       const title = document.getElementById('class').value;
+      
+      // Collect selected skills
+      const selectedSkills = [];
+      document.querySelectorAll('.skill-checkbox:checked').forEach(checkbox => {
+        selectedSkills.push(checkbox.id.replace('skill-', ''));
+      });
       
       selectedTasks.forEach(taskCheckbox => {
         const taskId = taskCheckbox.value;
@@ -754,12 +903,14 @@
           subtaskId: subtaskId,
           subtaskName: subtaskName,
           name: name,
+          email: email,
           title: title,
+          skills: selectedSkills,
           deadline: deadline,
           reminderDate: reminderDate,
           reminderTime: reminderTime,
           notes: notes,
-          status: 'not-started' // Statut par défaut: Not started
+          status: 'not-started' // Default status: Not started
         });
       });
       
@@ -787,13 +938,13 @@
       return names;
     }
     
-    // Fonction pour mettre à jour une tâche dans le tableau de suivi
+    // Function to update a task in the tracking table
     function updateTaskInTrackingTable(task) {
       const taskId = task.taskId;
       const subtaskId = task.subtaskId;
-      const status = task.status || 'not-started'; // Par défaut: Not started
+      const status = task.status || 'not-started'; // Default: Not started
       
-      // Trouver la ligne de la tâche principale
+      // Find the main task row
       let mainTaskRow = null;
       const mainTaskRows = document.querySelectorAll('tr.main-task');
       
@@ -807,15 +958,15 @@
       }
       
       if (mainTaskRow) {
-        // Si pas de sous-tâche spécifique, mettre à jour la ligne de la tâche principale
+        // If no specific subtask, update the main task row
         if (!subtaskId) {
-          // Obtenir toutes les personnes assignées à cette tâche principale
+          // Get all people assigned to this main task
           const assignedPeople = getAllAssignedPeople(taskId, '');
           
-          // Mettre à jour la cellule avec toutes les personnes assignées
+          // Update the cell with all assigned people
           mainTaskRow.cells[2].textContent = assignedPeople.length > 0 ? assignedPeople.join(', ') : 'Not assigned yet';
           
-          // Mettre à jour la date limite (utiliser la plus proche)
+          // Update deadline (use the closest one)
           const deadlines = getRegisteredTasks()
             .filter(t => t.taskId === taskId && (!t.subtaskId || t.subtaskId === ''))
             .map(t => t.deadline)
@@ -826,7 +977,7 @@
             mainTaskRow.cells[3].textContent = deadlines[0];
           }
           
-          // Mettre à jour le statut avec un sélecteur intégré
+          // Update status with an embedded selector
           mainTaskRow.cells[5].innerHTML = `
             <select class="status-select status-${status}" onchange="updateTaskStatus('${taskId}', '', this.value)">
               <option value="not-started" ${status === 'not-started' ? 'selected' : ''}>Not started</option>
@@ -835,12 +986,12 @@
             </select>
           `;
           
-          // Mettre à jour les actions
+          // Update actions
           mainTaskRow.cells[6].innerHTML = `
             <button class="action-btn" onclick="editTask('${taskId}')">Edit</button>
           `;
         } else {
-          // Trouver et mettre à jour la ligne de la sous-tâche spécifique
+          // Find and update the specific subtask row
           const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
           
           for (let i = 0; i < subtaskRows.length; i++) {
@@ -848,13 +999,13 @@
             const subtaskCell = row.cells[0];
             
             if (subtaskCell && subtaskCell.textContent.toLowerCase().includes(task.subtaskName.toLowerCase())) {
-              // Obtenir toutes les personnes assignées à cette micro-tâche
+              // Get all people assigned to this micro-task
               const assignedPeople = getAllAssignedPeople(taskId, subtaskId);
               
-              // Mettre à jour la cellule avec toutes les personnes assignées
+              // Update the cell with all assigned people
               row.cells[2].textContent = assignedPeople.length > 0 ? assignedPeople.join(', ') : 'Not assigned yet';
               
-              // Mettre à jour la date limite (utiliser la plus proche)
+              // Update deadline (use the closest one)
               const deadlines = getRegisteredTasks()
                 .filter(t => t.taskId === taskId && t.subtaskId === subtaskId)
                 .map(t => t.deadline)
@@ -865,12 +1016,12 @@
                 row.cells[3].textContent = deadlines[0];
               }
               
-              // Mettre à jour l'heure si fournie
+              // Update time if provided
               if (task.reminderTime) {
                 row.cells[4].textContent = task.reminderTime;
               }
               
-              // Mettre à jour le statut avec un sélecteur intégré
+              // Update status with an embedded selector
               row.cells[5].innerHTML = `
                 <select class="status-select status-${status}" onchange="updateTaskStatus('${taskId}', '${subtaskId}', this.value)">
                   <option value="not-started" ${status === 'not-started' ? 'selected' : ''}>Not started</option>
@@ -879,13 +1030,13 @@
                 </select>
               `;
               
-              // Mettre à jour les actions
+              // Update actions
               row.cells[6].innerHTML = `
                 <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
                 <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
               `;
               
-              // Développer les sous-tâches pour afficher la tâche assignée
+              // Expand subtasks to show the assigned task
               const expandBtn = mainTaskRow.querySelector('.expand-btn');
               if (expandBtn && expandBtn.textContent === '+') {
                 expandBtn.click();
@@ -898,20 +1049,20 @@
       }
     }
     
-    // Fonction pour mettre à jour le statut d'une tâche
+    // Function to update task status
     function updateTaskStatus(taskId, subtaskId, status) {
-      // Mettre à jour le statut dans le localStorage
+      // Update status in localStorage
       let registeredTasks = getRegisteredTasks();
       
       if (subtaskId) {
-        // Mise à jour d'une sous-tâche
+        // Update a subtask
         registeredTasks.forEach(task => {
           if (task.taskId === taskId && task.subtaskId === subtaskId) {
             task.status = status;
           }
         });
       } else {
-        // Mise à jour d'une tâche principale
+        // Update a main task
         registeredTasks.forEach(task => {
           if (task.taskId === taskId && (!task.subtaskId || task.subtaskId === '')) {
             task.status = status;
@@ -921,11 +1072,11 @@
       
       localStorage.setItem('registeredTasks', JSON.stringify(registeredTasks));
       
-      // Trouver la ligne de tâche appropriée
+      // Find the appropriate task row
       let taskRow;
       
       if (!subtaskId) {
-        // Tâche principale
+        // Main task
         const mainTaskRows = document.querySelectorAll('tr.main-task');
         for (let i = 0; i < mainTaskRows.length; i++) {
           const row = mainTaskRows[i];
@@ -935,7 +1086,7 @@
           }
         }
       } else {
-        // Sous-tâche
+        // Subtask
         const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
         for (let i = 0; i < subtaskRows.length; i++) {
           const row = subtaskRows[i];
@@ -947,20 +1098,20 @@
       }
       
       if (taskRow) {
-        // Mettre à jour la classe du sélecteur pour changer sa couleur
+        // Update the selector class to change its color
         const statusSelect = taskRow.cells[5].querySelector('.status-select');
         if (statusSelect) {
-          // Supprimer toutes les classes de statut existantes
+          // Remove all existing status classes
           statusSelect.classList.remove('status-not-started', 'status-in-progress', 'status-completed');
           
-          // Ajouter la nouvelle classe de statut
+          // Add the new status class
           statusSelect.classList.add('status-' + status);
         }
         
-        // Si c'est une sous-tâche, vérifier l'impact sur la tâche parent
+        // If it's a subtask, check impact on parent task
         if (subtaskId) {
           if (status === 'completed') {
-            // Vérifier si toutes les sous-tâches sont complétées
+            // Check if all subtasks are completed
             const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
             let allCompleted = true;
             
@@ -973,7 +1124,7 @@
             }
             
             if (allCompleted) {
-              // Mettre à jour la tâche parent comme complétée
+              // Update parent task as completed
               const mainTaskRows = document.querySelectorAll('tr.main-task');
               for (let i = 0; i < mainTaskRows.length; i++) {
                 const row = mainTaskRows[i];
@@ -984,7 +1135,7 @@
                     parentSelect.classList.remove('status-not-started', 'status-in-progress');
                     parentSelect.classList.add('status-completed');
                     
-                    // Mettre à jour également dans le localStorage
+                    // Also update in localStorage
                     updateTaskStatus(taskId, '', 'completed');
                   }
                   break;
@@ -992,7 +1143,7 @@
               }
             }
           } else {
-            // Si une sous-tâche n'est pas complétée, la tâche parent ne peut pas être complétée
+            // If a subtask is not completed, parent task cannot be completed
             const mainTaskRows = document.querySelectorAll('tr.main-task');
             for (let i = 0; i < mainTaskRows.length; i++) {
               const row = mainTaskRows[i];
@@ -1003,7 +1154,7 @@
                   parentSelect.classList.remove('status-not-started', 'status-completed');
                   parentSelect.classList.add('status-in-progress');
                   
-                  // Mettre à jour également dans le localStorage
+                  // Also update in localStorage
                   updateTaskStatus(taskId, '', 'in-progress');
                 }
                 break;
@@ -1014,13 +1165,13 @@
       }
     }
     
-    // Fonction pour éditer une tâche
+    // Function to edit a task
     function editTask(taskId) {
       alert("Editing feature to be implemented for task: " + taskId);
       // Implementation to come
     }
     
-    // Fonction pour afficher les personnes assignées à une tâche
+    // Function to display people assigned to a task
     function viewAssignees(taskId, subtaskId) {
       const assignees = getAllAssignedPeople(taskId, subtaskId);
       const assigneeList = document.getElementById('assignee-list');
@@ -1042,12 +1193,12 @@
       document.getElementById('assignees-modal').style.display = 'flex';
     }
     
-    // Fonction pour fermer la modal
+    // Function to close the modal
     function closeModal() {
       document.getElementById('assignees-modal').style.display = 'none';
     }
     
-    // Fonction pour changer d'utilisateur
+    // Function to change user
     function changeUser() {
       localStorage.removeItem('currentUser');
       const newUser = getCurrentUser();
@@ -1057,64 +1208,116 @@
           userDisplay.textContent = `User: ${newUser}`;
         }
         
-        // Actualiser les filtres
+        // Refresh filters
         filterTasks();
       }
     }
     
-    // Fonction pour initialiser le tableau de suivi
+    // Function to initialize the tracking table
     function initializeTrackingTable() {
       const trackingTable = document.getElementById('tracking-table').getElementsByTagName('tbody')[0];
-      trackingTable.innerHTML = ''; // Effacer le contenu existant
+      trackingTable.innerHTML = ''; // Clear existing content
       
-      // Définir les catégories de tâches
+      // Define task categories
       const taskCategories = {
-        'task1': { name: 'Gymnasium Preparation', category: 'Event Preparation', subtasks: {
-          'subtask1-1': 'Basketball hoops installation',
-          'subtask1-2': 'Floor marking',
-          'subtask1-3': 'Locker room preparation'
-        }},
-        'task2': { name: 'Registration Management', category: 'Event Preparation', subtasks: {
-          'subtask2-1': 'Team registration',
-          'subtask2-2': 'License verification',
-          'subtask2-3': 'Badge preparation'
-        }},
-        'task3': { name: 'Refereeing', category: 'Event Day', subtasks: {
-          'subtask3-1': 'Court 1 refereeing',
-          'subtask3-2': 'Court 2 refereeing',
-          'subtask3-3': 'Scoring table'
-        }},
-        'task4': { name: 'Refreshments and Food', category: 'Event Day', subtasks: {
-          'subtask4-1': 'Beverage service',
-          'subtask4-2': 'Sandwich preparation',
-          'subtask4-3': 'Cashier'
-        }}
+        'task1': { 
+          name: 'Administration and Coordination', 
+          category: 'Tasks Before the Event', 
+          subtasks: {
+            'subtask1-1': 'Prepare authorization request documents',
+            'subtask1-2': 'Coordinate with administration',
+            'subtask1-3': 'Obtain gymnasium authorizations',
+            'subtask1-4': 'Follow up on approvals',
+            'subtask1-5': 'Communicate administrative decisions'
+          }
+        },
+        'task2': { 
+          name: 'Setup and Preparation', 
+          category: 'Tasks During the Event', 
+          subtasks: {
+            'subtask2-1': 'Set up sports equipment',
+            'subtask2-2': 'Set up game fair booths',
+            'subtask2-3': 'Install signage',
+            'subtask2-4': 'Prepare the canteen area',
+            'subtask2-5': 'Verify installations'
+          }
+        },
+        'task3': { 
+          name: 'Cleanup and Teardown', 
+          category: 'Tasks After the Event', 
+          subtasks: {
+            'subtask3-1': 'Dismantle game fair booths',
+            'subtask3-2': 'Clean the gymnasium floor',
+            'subtask3-3': 'Return sports equipment',
+            'subtask3-4': 'Clean the canteen area',
+            'subtask3-5': 'Remove signage and decorations',
+            'subtask3-6': 'Final verification of spaces'
+          }
+        },
+        'task4': { 
+          name: 'Financial Reporting', 
+          category: 'Tasks After the Event', 
+          subtasks: {
+            'subtask4-1': 'Collect receipts and expenses',
+            'subtask4-2': 'Calculate profits/losses',
+            'subtask4-3': 'Prepare financial summary'
+          }
+        },
+        'task5': { 
+          name: 'Feedback Collection and Analysis', 
+          category: 'Tasks After the Event', 
+          subtasks: {
+            'subtask5-1': 'Create feedback forms',
+            'subtask5-2': 'Distribute and collect forms',
+            'subtask5-3': 'Analyze feedback data',
+            'subtask5-4': 'Prepare feedback summary'
+          }
+        },
+        'task6': { 
+          name: 'Thank You and Recognition', 
+          category: 'Tasks After the Event', 
+          subtasks: {
+            'subtask6-1': 'Draft thank you messages',
+            'subtask6-2': 'Identify all contributors',
+            'subtask6-3': 'Send thank you communications'
+          }
+        },
+        'task7': { 
+          name: 'Final Event Report', 
+          category: 'Tasks After the Event', 
+          subtasks: {
+            'subtask7-1': 'Gather information from all teams',
+            'subtask7-2': 'Draft report sections',
+            'subtask7-3': 'Compile final report',
+            'subtask7-4': 'Present report to stakeholders'
+          }
+        }
       };
       
-      // Ajouter les tâches principales et leurs sous-tâches
+      // Add main tasks and their subtasks
       for (const taskId in taskCategories) {
         const taskInfo = taskCategories[taskId];
         
-        // Ajouter la ligne de la tâche principale
+        // Add main task row
         const mainTaskRow = trackingTable.insertRow();
         mainTaskRow.className = 'main-task';
         
-        // Cellule de nom de tâche avec bouton d'expansion
+        // Task name cell with expand button
         const taskNameCell = mainTaskRow.insertCell(0);
         taskNameCell.innerHTML = `<button class="expand-btn" onclick="toggleSubtasks('${taskId}')">+</button> ${taskInfo.name}`;
         
-        // Autres cellules
+        // Other cells
         mainTaskRow.insertCell(1).textContent = taskInfo.category;
         
-        // Obtenir les personnes assignées à cette tâche principale
+        // Get people assigned to this main task
         const assignedPeople = getAllAssignedPeople(taskId, '');
         mainTaskRow.insertCell(2).textContent = assignedPeople.length > 0 ? assignedPeople.join(', ') : 'Not assigned yet';
         
-        // Date limite et heure
+        // Deadline and time
         mainTaskRow.insertCell(3).textContent = '';
         mainTaskRow.insertCell(4).textContent = '';
         
-        // Statut par défaut
+        // Default status
         const statusCell = mainTaskRow.insertCell(5);
         statusCell.innerHTML = `
           <select class="status-select status-not-started" onchange="updateTaskStatus('${taskId}', '', this.value)">
@@ -1128,7 +1331,7 @@
         const actionsCell = mainTaskRow.insertCell(6);
         actionsCell.innerHTML = `<button class="action-btn" onclick="editTask('${taskId}')">Edit</button>`;
         
-        // Ajouter les sous-tâches
+        // Add subtasks
         for (const subtaskId in taskInfo.subtasks) {
           const subtaskName = taskInfo.subtasks[subtaskId];
           
@@ -1136,19 +1339,19 @@
           subtaskRow.className = 'subtask-row hidden';
           subtaskRow.setAttribute('data-parent', taskId);
           
-          // Cellules de la sous-tâche
+          // Subtask cells
           subtaskRow.insertCell(0).textContent = subtaskName;
           subtaskRow.insertCell(1).textContent = taskInfo.category;
           
-          // Obtenir les personnes assignées à cette sous-tâche
+          // Get people assigned to this subtask
           const subtaskAssignees = getAllAssignedPeople(taskId, subtaskId);
           subtaskRow.insertCell(2).textContent = subtaskAssignees.length > 0 ? subtaskAssignees.join(', ') : 'Not assigned yet';
           
-          // Date limite et heure
+          // Deadline and time
           subtaskRow.insertCell(3).textContent = '';
           subtaskRow.insertCell(4).textContent = '';
           
-          // Statut par défaut
+          // Default status
           const subtaskStatusCell = subtaskRow.insertCell(5);
           subtaskStatusCell.innerHTML = `
             <select class="status-select status-not-started" onchange="updateTaskStatus('${taskId}', '${subtaskId}', this.value)">
@@ -1167,22 +1370,22 @@
         }
       }
       
-      // Mettre à jour les statuts des tâches enregistrées
+      // Update statuses of registered tasks
       const registeredTasks = getRegisteredTasks();
       registeredTasks.forEach(task => {
         updateTaskInTrackingTable(task);
       });
     }
     
-    // Initialiser l'onglet de suivi
+    // Initialize tracking tab
     function initializeTrackingTab() {
       initializeTrackingTable();
-      filterTasks(); // Appliquer les filtres initiaux
+      filterTasks(); // Apply initial filters
     }
     
-    // Initialiser l'application
+    // Initialize the application
     document.addEventListener('DOMContentLoaded', function() {
-      // Initialiser l'utilisateur actuel
+      // Initialize current user
       const currentUser = getCurrentUser();
       if (currentUser) {
         const userDisplay = document.getElementById('current-user-display');
@@ -1191,22 +1394,23 @@
         }
       }
       
-      // Configurer le gestionnaire d'événements pour le bouton d'inscription
+      // Set up event handler for the registration button
       const registerBtn = document.getElementById('register-btn');
       if (registerBtn) {
         registerBtn.addEventListener('click', function() {
           const name = document.getElementById('name').value;
+          const email = document.getElementById('email').value;
           const title = document.getElementById('class').value;
           
-          // Validation des champs obligatoires
-          if (!name || !title) {
+          // Validate required fields
+          if (!name || !email || !title) {
             const errorMessage = document.getElementById('error-message');
             errorMessage.textContent = 'Please fill in all required fields.';
             errorMessage.style.display = 'block';
             return;
           }
           
-          // Collecter les tâches sélectionnées
+          // Collect selected tasks
           const selectedTasks = Array.from(document.querySelectorAll('.task-checkbox:checked'));
           
           if (selectedTasks.length === 0) {
@@ -1216,21 +1420,21 @@
             return;
           }
           
-          // Collecter les données des tâches
+          // Collect task data
           const taskData = collectTaskData(selectedTasks);
           
-          // Enregistrer les tâches
+          // Save tasks
           saveTaskRegistration(taskData);
           
-          // Afficher un message de confirmation
+          // Show confirmation message
           alert('Task registration successful!');
           
-          // Réinitialiser le formulaire
+          // Reset form
           document.querySelectorAll('.task-checkbox:checked').forEach(checkbox => {
             checkbox.checked = false;
           });
           
-          // Rediriger vers l'onglet de suivi
+          // Redirect to tracking tab
           document.querySelector('.tablinks:nth-child(2)').click();
         });
       }
