@@ -420,6 +420,33 @@
       margin-bottom: 20px;
       font-size: 1.2em;
     }
+    
+    /* New tab style for repositioned tabs */
+    .new-tab {
+      margin: 20px 0;
+      display: flex;
+      gap: 10px;
+    }
+    
+    .new-tab button {
+      background-color: #3498db;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      flex: 1;
+      text-align: center;
+    }
+    
+    .new-tab button:hover {
+      background-color: #2980b9;
+    }
+    
+    .new-tab button.active {
+      background-color: #2c3e50;
+    }
   </style>
 </head>
 <body>
@@ -432,313 +459,310 @@
     <button onclick="changeUser()">Change User</button>
   </div>
   
-  <!-- Tab Container -->
-  <div class="tab-container">
-    <div class="tab">
-      <button class="tablinks active" onclick="openTab(event, 'registration')">Task Registration</button>
-      <button class="tablinks" onclick="openTab(event, 'tracking')">Task Tracking</button>
-    </div>
+  <!-- Event Information -->
+  <div class="event-info">
+    <p><strong>Event Date:</strong> In May 2026</p>
+    <p><strong>Time:</strong> In the afternoon, 2 blocs</p>
+    <p><strong>Location:</strong> At school</p>
+    <p><strong>Organizer:</strong> B365 Club</p>
+    <p><strong>Activities:</strong> Basketball tournament, game fair, food sales at the canteen</p>
+    <p><strong>Entry:</strong> Tickets to be purchased (price to be determined)</p>
+    <p>This event is organized by students and includes a basketball tournament (including a teachers' team) as well as a game fair. B365 students will also run a canteen to sell food to players and spectators.</p>
+  </div>
+  
+  <div class="form-section">
+    <h3>Information</h3>
+    <label for="name">First Name or Nickname <span class="required-label">*</span></label>
+    <input type="text" id="name" required>
     
-    <!-- Registration Tab -->
-    <div id="registration" class="tabcontent" style="display: block;">
-      
-      <!-- Event Information -->
-      <div class="event-info">
-        <p><strong>Event Date:</strong> In May 2026</p>
-        <p><strong>Time:</strong> In the afternoon, 2 blocs</p>
-        <p><strong>Location:</strong> At school</p>
-        <p><strong>Organizer:</strong> B365 Club</p>
-        <p><strong>Activities:</strong> Basketball tournament, game fair, food sales at the canteen</p>
-        <p><strong>Entry:</strong> Tickets to be purchased (price to be determined)</p>
-        <p>This event is organized by students and includes a basketball tournament (including a teachers' team) as well as a game fair. B365 students will also run a canteen to sell food to players and spectators.</p>
-      </div>
-      
-      <div class="form-section">
-        <h3>Information</h3>
-        <label for="name">First Name or Nickname <span class="required-label">*</span></label>
-        <input type="text" id="name" required>
-        
-        <label for="title">Title (student, teacher, etc) <span class="required-label">*</span></label>
-        <input type="text" id="title" required>
-      </div>
-      
-      <!-- Task Categories -->
-      <div class="category-header">Tasks Before the Event</div>
-      
-      <div class="task-group">
-        <div class="checkbox-container">
-          <input type="checkbox" id="task1" class="task-checkbox" value="task1">
-          <label for="task1">Administration and Coordination <span class="skill-tag">Organization</span> <span class="skill-tag">Communication</span> <span class="priority-high">High Priority</span></label>
-        </div>
-        <div class="task-details" id="task1-details">
-          <p>Description: Obtain all necessary administrative approvals for the event.</p>
-          <label for="task1-subtask">Specific micro-task:</label>
-          <select id="task1-subtask">
-            <option value="">-- Select a micro-task --</option>
-            <option value="subtask1-1">Prepare authorization request documents</option>
-            <option value="subtask1-2">Coordinate with administration</option>
-            <option value="subtask1-3">Obtain gymnasium authorizations</option>
-            <option value="subtask1-4">Follow up on approvals</option>
-            <option value="subtask1-5">Communicate administrative decisions</option>
-          </select>
-          
-          <label for="task1-deadline">Deadline to complete this task:</label>
-          <input type="date" id="task1-deadline">
-          
-          <label for="task1-reminder-date">Your personal reminder date:</label>
-          <input type="date" id="task1-reminder-date">
-          
-          <label for="task1-reminder-time">Reminder time:</label>
-          <input type="time" id="task1-reminder-time">
-          
-          <label for="task1-notes">Additional notes:</label>
-          <textarea id="task1-notes" rows="3"></textarea>
-          
-          <p><em>Skills developed: Professional communication, administrative follow-up, organization</em></p>
-        </div>
-      </div>
-      
-      <div class="category-header">Tasks During the Event</div>
-      
-      <div class="task-group">
-        <div class="checkbox-container">
-          <input type="checkbox" id="task2" class="task-checkbox" value="task2">
-          <label for="task2">Setup and Preparation <span class="skill-tag">Organization</span></label>
-        </div>
-        <div class="task-details" id="task2-details">
-          <p>Description: Prepare the venue before the start of the event (after lunch).</p>
-          <label for="task2-subtask">Specific micro-task:</label>
-          <select id="task2-subtask">
-            <option value="">-- Select a micro-task --</option>
-            <option value="subtask2-1">Set up sports equipment</option>
-            <option value="subtask2-2">Set up game fair booths</option>
-            <option value="subtask2-3">Install signage</option>
-            <option value="subtask2-4">Prepare the canteen area</option>
-            <option value="subtask2-5">Verify installations</option>
-          </select>
-          
-          <label for="task2-deadline">Deadline to complete this task:</label>
-          <input type="date" id="task2-deadline">
-          
-          <label for="task2-reminder-date">Your personal reminder date:</label>
-          <input type="date" id="task2-reminder-date">
-          
-          <label for="task2-reminder-time">Reminder time:</label>
-          <input type="time" id="task2-reminder-time">
-          
-          <label for="task2-notes">Additional notes:</label>
-          <textarea id="task2-notes" rows="3"></textarea>
-          
-          <p><em>Skills developed: Logistics organization, teamwork, problem solving</em></p>
-        </div>
-      </div>
-      
-      <div class="category-header">Tasks After the Event</div>
-      
-      <div class="task-group">
-        <div class="checkbox-container">
-          <input type="checkbox" id="task3" class="task-checkbox" value="task3">
-          <label for="task3">Cleanup and Teardown <span class="skill-tag">Organization</span> <span class="priority-high">High Priority</span></label>
-        </div>
-        <div class="task-details" id="task3-details">
-          <p>Description: Clean and restore all spaces used during the event.</p>
-          <label for="task3-subtask">Specific micro-task:</label>
-          <select id="task3-subtask">
-            <option value="">-- Select a micro-task --</option>
-            <option value="subtask3-1">Dismantle game fair booths</option>
-            <option value="subtask3-2">Clean the gymnasium floor</option>
-            <option value="subtask3-3">Return sports equipment</option>
-            <option value="subtask3-4">Clean the canteen area</option>
-            <option value="subtask3-5">Remove signage and decorations</option>
-            <option value="subtask3-6">Final verification of spaces</option>
-          </select>
-          
-          <label for="task3-deadline">Deadline to complete this task:</label>
-          <input type="date" id="task3-deadline">
-          
-          <label for="task3-reminder-date">Your personal reminder date:</label>
-          <input type="date" id="task3-reminder-date">
-          
-          <label for="task3-reminder-time">Reminder time:</label>
-          <input type="time" id="task3-reminder-time">
-          
-          <label for="task3-notes">Additional notes:</label>
-          <textarea id="task3-notes" rows="3"></textarea>
-          
-          <p><em>Skills developed: Organization, teamwork, responsibility</em></p>
-        </div>
-      </div>
-      
-      <div class="task-group">
-        <div class="checkbox-container">
-          <input type="checkbox" id="task4" class="task-checkbox" value="task4">
-          <label for="task4">Financial Reporting <span class="skill-tag">Finance</span> <span class="skill-tag">Organization</span></label>
-        </div>
-        <div class="task-details" id="task4-details">
-          <p>Description: Compile and report on the financial aspects of the event.</p>
-          <label for="task4-subtask">Specific micro-task:</label>
-          <select id="task4-subtask">
-            <option value="">-- Select a micro-task --</option>
-            <option value="subtask4-1">Collect receipts and expenses</option>
-            <option value="subtask4-2">Calculate profits/losses</option>
-            <option value="subtask4-3">Prepare financial summary</option>
-          </select>
-          
-          <label for="task4-deadline">Deadline to complete this task:</label>
-          <input type="date" id="task4-deadline">
-          
-          <label for="task4-reminder-date">Your personal reminder date:</label>
-          <input type="date" id="task4-reminder-date">
-          
-          <label for="task4-reminder-time">Reminder time:</label>
-          <input type="time" id="task4-reminder-time">
-          
-          <label for="task4-notes">Additional notes:</label>
-          <textarea id="task4-notes" rows="3"></textarea>
-        </div>
-      </div>
-      
-      <div class="task-group">
-        <div class="checkbox-container">
-          <input type="checkbox" id="task5" class="task-checkbox" value="task5">
-          <label for="task5">Feedback Collection and Analysis <span class="skill-tag">Communication</span> <span class="skill-tag">Organization</span></label>
-        </div>
-        <div class="task-details" id="task5-details">
-          <p>Description: Collect and analyze feedback from participants and attendees.</p>
-          <label for="task5-subtask">Specific micro-task:</label>
-          <select id="task5-subtask">
-            <option value="">-- Select a micro-task --</option>
-            <option value="subtask5-1">Create feedback forms</option>
-            <option value="subtask5-2">Distribute and collect forms</option>
-            <option value="subtask5-3">Analyze feedback data</option>
-            <option value="subtask5-4">Prepare feedback summary</option>
-          </select>
-          
-          <label for="task5-deadline">Deadline to complete this task:</label>
-          <input type="date" id="task5-deadline">
-          
-          <label for="task5-reminder-date">Your personal reminder date:</label>
-          <input type="date" id="task5-reminder-date">
-          
-          <label for="task5-reminder-time">Reminder time:</label>
-          <input type="time" id="task5-reminder-time">
-          
-          <label for="task5-notes">Additional notes:</label>
-          <textarea id="task5-notes" rows="3"></textarea>
-        </div>
-      </div>
-      
-      <div class="task-group">
-        <div class="checkbox-container">
-          <input type="checkbox" id="task6" class="task-checkbox" value="task6">
-          <label for="task6">Thank You and Recognition <span class="skill-tag">Communication</span></label>
-        </div>
-        <div class="task-details" id="task6-details">
-          <p>Description: Send thank you messages and recognize contributors.</p>
-          <label for="task6-subtask">Specific micro-task:</label>
-          <select id="task6-subtask">
-            <option value="">-- Select a micro-task --</option>
-            <option value="subtask6-1">Draft thank you messages</option>
-            <option value="subtask6-2">Identify all contributors</option>
-            <option value="subtask6-3">Send thank you communications</option>
-          </select>
-          
-          <label for="task6-deadline">Deadline to complete this task:</label>
-          <input type="date" id="task6-deadline">
-          
-          <label for="task6-reminder-date">Your personal reminder date:</label>
-          <input type="date" id="task6-reminder-date">
-          
-          <label for="task6-reminder-time">Reminder time:</label>
-          <input type="time" id="task6-reminder-time">
-          
-          <label for="task6-notes">Additional notes:</label>
-          <textarea id="task6-notes" rows="3"></textarea>
-        </div>
-      </div>
-      
-      <div class="task-group">
-        <div class="checkbox-container">
-          <input type="checkbox" id="task7" class="task-checkbox" value="task7">
-          <label for="task7">Final Event Report <span class="skill-tag">Communication</span> <span class="skill-tag">Organization</span></label>
-        </div>
-        <div class="task-details" id="task7-details">
-          <p>Description: Compile a comprehensive report on the entire event.</p>
-          <label for="task7-subtask">Specific micro-task:</label>
-          <select id="task7-subtask">
-            <option value="">-- Select a micro-task --</option>
-            <option value="subtask7-1">Gather information from all teams</option>
-            <option value="subtask7-2">Draft report sections</option>
-            <option value="subtask7-3">Compile final report</option>
-            <option value="subtask7-4">Present report to stakeholders</option>
-          </select>
-          
-          <label for="task7-deadline">Deadline to complete this task:</label>
-          <input type="date" id="task7-deadline">
-          
-          <label for="task7-reminder-date">Your personal reminder date:</label>
-          <input type="date" id="task7-reminder-date">
-          
-          <label for="task7-reminder-time">Reminder time:</label>
-          <input type="time" id="task7-reminder-time">
-          
-          <label for="task7-notes">Additional notes:</label>
-          <textarea id="task7-notes" rows="3"></textarea>
-        </div>
-      </div>
-      
-      <button id="register-btn" class="submit-btn">Submit my registration</button>
-      <div id="error-message" class="error-message"></div>
-    </div>
+    <label for="title">Title (student, teacher, etc) <span class="required-label">*</span></label>
+    <input type="text" id="title" required>
+  </div>
+  
+  <!-- New Tab Container Positioned Before Tasks -->
+  <div class="new-tab">
+    <button id="registration-tab" class="active" onclick="openNewTab('registration')">Task Registration</button>
+    <button id="tracking-tab" onclick="openNewTab('tracking')">Task Tracking</button>
+  </div>
+  
+  <!-- Registration Content -->
+  <div id="registration-content">
+    <!-- Task Categories -->
+    <div class="category-header">Tasks Before the Event</div>
     
-    <!-- Tracking Tab -->
-    <div id="tracking" class="tabcontent">
-      <h2>Task Tracking</h2>
-      
-      <!-- Filters and Search -->
-      <div class="search-box">
-        <input type="text" id="task-search" placeholder="Search tasks..." onkeyup="searchTasks()">
+    <div class="task-group">
+      <div class="checkbox-container">
+        <input type="checkbox" id="task1" class="task-checkbox" value="task1">
+        <label for="task1">Administration and Coordination <span class="skill-tag">Organization</span> <span class="skill-tag">Communication</span> <span class="priority-high">High Priority</span></label>
       </div>
-      
-      <div class="filter-options">
-        <select id="status-filter" onchange="filterTasks()">
-          <option value="all">All statuses</option>
-          <option value="not-started">Not started</option>
-          <option value="in-progress">In progress</option>
-          <option value="completed">Completed</option>
+      <div class="task-details" id="task1-details">
+        <p>Description: Obtain all necessary administrative approvals for the event.</p>
+        <label for="task1-subtask">Specific micro-task:</label>
+        <select id="task1-subtask">
+          <option value="">-- Select a micro-task --</option>
+          <option value="subtask1-1">Prepare authorization request documents</option>
+          <option value="subtask1-2">Coordinate with administration</option>
+          <option value="subtask1-3">Obtain gymnasium authorizations</option>
+          <option value="subtask1-4">Follow up on approvals</option>
+          <option value="subtask1-5">Communicate administrative decisions</option>
         </select>
         
-        <select id="category-filter" onchange="filterTasks()">
-          <option value="all">All categories</option>
-          <option value="Tasks Before the Event">Tasks Before the Event</option>
-          <option value="Tasks During the Event">Tasks During the Event</option>
-          <option value="Tasks After the Event">Tasks After the Event</option>
+        <label for="task1-deadline">Deadline to complete this task:</label>
+        <input type="date" id="task1-deadline">
+        
+        <label for="task1-reminder-date">Your personal reminder date:</label>
+        <input type="date" id="task1-reminder-date">
+        
+        <label for="task1-reminder-time">Reminder time:</label>
+        <input type="time" id="task1-reminder-time">
+        
+        <label for="task1-notes">Additional notes:</label>
+        <textarea id="task1-notes" rows="3"></textarea>
+        
+        <p><em>Skills developed: Professional communication, administrative follow-up, organization</em></p>
+      </div>
+    </div>
+    
+    <div class="category-header">Tasks During the Event</div>
+    
+    <div class="task-group">
+      <div class="checkbox-container">
+        <input type="checkbox" id="task2" class="task-checkbox" value="task2">
+        <label for="task2">Setup and Preparation <span class="skill-tag">Organization</span></label>
+      </div>
+      <div class="task-details" id="task2-details">
+        <p>Description: Prepare the venue before the start of the event (after lunch).</p>
+        <label for="task2-subtask">Specific micro-task:</label>
+        <select id="task2-subtask">
+          <option value="">-- Select a micro-task --</option>
+          <option value="subtask2-1">Set up sports equipment</option>
+          <option value="subtask2-2">Set up game fair booths</option>
+          <option value="subtask2-3">Install signage</option>
+          <option value="subtask2-4">Prepare the canteen area</option>
+          <option value="subtask2-5">Verify installations</option>
         </select>
         
-        <div class="checkbox-container">
-          <input type="checkbox" id="my-tasks-filter" onchange="filterTasks()">
-          <label for="my-tasks-filter">My tasks only</label>
-        </div>
+        <label for="task2-deadline">Deadline to complete this task:</label>
+        <input type="date" id="task2-deadline">
+        
+        <label for="task2-reminder-date">Your personal reminder date:</label>
+        <input type="date" id="task2-reminder-date">
+        
+        <label for="task2-reminder-time">Reminder time:</label>
+        <input type="time" id="task2-reminder-time">
+        
+        <label for="task2-notes">Additional notes:</label>
+        <textarea id="task2-notes" rows="3"></textarea>
+        
+        <p><em>Skills developed: Logistics organization, teamwork, problem solving</em></p>
       </div>
-      
-      <!-- Tracking Table -->
-      <table id="tracking-table">
-        <thead>
-          <tr>
-            <th>Task</th>
-            <th>Category</th>
-            <th>Assigned to</th>
-            <th>Deadline</th>
-            <th>Time</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Table rows will be dynamically generated -->
-        </tbody>
-      </table>
     </div>
+    
+    <div class="category-header">Tasks After the Event</div>
+    
+    <div class="task-group">
+      <div class="checkbox-container">
+        <input type="checkbox" id="task3" class="task-checkbox" value="task3">
+        <label for="task3">Cleanup and Teardown <span class="skill-tag">Organization</span> <span class="priority-high">High Priority</span></label>
+      </div>
+      <div class="task-details" id="task3-details">
+        <p>Description: Clean and restore all spaces used during the event.</p>
+        <label for="task3-subtask">Specific micro-task:</label>
+        <select id="task3-subtask">
+          <option value="">-- Select a micro-task --</option>
+          <option value="subtask3-1">Dismantle game fair booths</option>
+          <option value="subtask3-2">Clean the gymnasium floor</option>
+          <option value="subtask3-3">Return sports equipment</option>
+          <option value="subtask3-4">Clean the canteen area</option>
+          <option value="subtask3-5">Remove signage and decorations</option>
+          <option value="subtask3-6">Final verification of spaces</option>
+        </select>
+        
+        <label for="task3-deadline">Deadline to complete this task:</label>
+        <input type="date" id="task3-deadline">
+        
+        <label for="task3-reminder-date">Your personal reminder date:</label>
+        <input type="date" id="task3-reminder-date">
+        
+        <label for="task3-reminder-time">Reminder time:</label>
+        <input type="time" id="task3-reminder-time">
+        
+        <label for="task3-notes">Additional notes:</label>
+        <textarea id="task3-notes" rows="3"></textarea>
+        
+        <p><em>Skills developed: Organization, teamwork, responsibility</em></p>
+      </div>
+    </div>
+    
+    <div class="task-group">
+      <div class="checkbox-container">
+        <input type="checkbox" id="task4" class="task-checkbox" value="task4">
+        <label for="task4">Financial Reporting <span class="skill-tag">Finance</span> <span class="skill-tag">Organization</span></label>
+      </div>
+      <div class="task-details" id="task4-details">
+        <p>Description: Compile and report on the financial aspects of the event.</p>
+        <label for="task4-subtask">Specific micro-task:</label>
+        <select id="task4-subtask">
+          <option value="">-- Select a micro-task --</option>
+          <option value="subtask4-1">Collect receipts and expenses</option>
+          <option value="subtask4-2">Calculate profits/losses</option>
+          <option value="subtask4-3">Prepare financial summary</option>
+        </select>
+        
+        <label for="task4-deadline">Deadline to complete this task:</label>
+        <input type="date" id="task4-deadline">
+        
+        <label for="task4-reminder-date">Your personal reminder date:</label>
+        <input type="date" id="task4-reminder-date">
+        
+        <label for="task4-reminder-time">Reminder time:</label>
+        <input type="time" id="task4-reminder-time">
+        
+        <label for="task4-notes">Additional notes:</label>
+        <textarea id="task4-notes" rows="3"></textarea>
+      </div>
+    </div>
+    
+    <div class="task-group">
+      <div class="checkbox-container">
+        <input type="checkbox" id="task5" class="task-checkbox" value="task5">
+        <label for="task5">Feedback Collection and Analysis <span class="skill-tag">Communication</span> <span class="skill-tag">Organization</span></label>
+      </div>
+      <div class="task-details" id="task5-details">
+        <p>Description: Collect and analyze feedback from participants and attendees.</p>
+        <label for="task5-subtask">Specific micro-task:</label>
+        <select id="task5-subtask">
+          <option value="">-- Select a micro-task --</option>
+          <option value="subtask5-1">Create feedback forms</option>
+          <option value="subtask5-2">Distribute and collect forms</option>
+          <option value="subtask5-3">Analyze feedback data</option>
+          <option value="subtask5-4">Prepare feedback summary</option>
+        </select>
+        
+        <label for="task5-deadline">Deadline to complete this task:</label>
+        <input type="date" id="task5-deadline">
+        
+        <label for="task5-reminder-date">Your personal reminder date:</label>
+        <input type="date" id="task5-reminder-date">
+        
+        <label for="task5-reminder-time">Reminder time:</label>
+        <input type="time" id="task5-reminder-time">
+        
+        <label for="task5-notes">Additional notes:</label>
+        <textarea id="task5-notes" rows="3"></textarea>
+      </div>
+    </div>
+    
+    <div class="task-group">
+      <div class="checkbox-container">
+        <input type="checkbox" id="task6" class="task-checkbox" value="task6">
+        <label for="task6">Thank You and Recognition <span class="skill-tag">Communication</span></label>
+      </div>
+      <div class="task-details" id="task6-details">
+        <p>Description: Send thank you messages and recognize contributors.</p>
+        <label for="task6-subtask">Specific micro-task:</label>
+        <select id="task6-subtask">
+          <option value="">-- Select a micro-task --</option>
+          <option value="subtask6-1">Draft thank you messages</option>
+          <option value="subtask6-2">Identify all contributors</option>
+          <option value="subtask6-3">Send thank you communications</option>
+        </select>
+        
+        <label for="task6-deadline">Deadline to complete this task:</label>
+        <input type="date" id="task6-deadline">
+        
+        <label for="task6-reminder-date">Your personal reminder date:</label>
+        <input type="date" id="task6-reminder-date">
+        
+        <label for="task6-reminder-time">Reminder time:</label>
+        <input type="time" id="task6-reminder-time">
+        
+        <label for="task6-notes">Additional notes:</label>
+        <textarea id="task6-notes" rows="3"></textarea>
+      </div>
+    </div>
+    
+    <div class="task-group">
+      <div class="checkbox-container">
+        <input type="checkbox" id="task7" class="task-checkbox" value="task7">
+        <label for="task7">Final Event Report <span class="skill-tag">Communication</span> <span class="skill-tag">Organization</span></label>
+      </div>
+      <div class="task-details" id="task7-details">
+        <p>Description: Compile a comprehensive report on the entire event.</p>
+        <label for="task7-subtask">Specific micro-task:</label>
+        <select id="task7-subtask">
+          <option value="">-- Select a micro-task --</option>
+          <option value="subtask7-1">Gather information from all teams</option>
+          <option value="subtask7-2">Draft report sections</option>
+          <option value="subtask7-3">Compile final report</option>
+          <option value="subtask7-4">Present report to stakeholders</option>
+        </select>
+        
+        <label for="task7-deadline">Deadline to complete this task:</label>
+        <input type="date" id="task7-deadline">
+        
+        <label for="task7-reminder-date">Your personal reminder date:</label>
+        <input type="date" id="task7-reminder-date">
+        
+        <label for="task7-reminder-time">Reminder time:</label>
+        <input type="time" id="task7-reminder-time">
+        
+        <label for="task7-notes">Additional notes:</label>
+        <textarea id="task7-notes" rows="3"></textarea>
+      </div>
+    </div>
+    
+    <button id="register-btn" class="submit-btn">Submit my registration</button>
+    <div id="error-message" class="error-message"></div>
+  </div>
+  
+  <!-- Tracking Content -->
+  <div id="tracking-content" style="display: none;">
+    <h2>Task Tracking</h2>
+    
+    <!-- Filters and Search -->
+    <div class="search-box">
+      <input type="text" id="task-search" placeholder="Search tasks..." onkeyup="searchTasks()">
+    </div>
+    
+    <div class="filter-options">
+      <select id="status-filter" onchange="filterTasks()">
+        <option value="all">All statuses</option>
+        <option value="not-started">Not started</option>
+        <option value="in-progress">In progress</option>
+        <option value="completed">Completed</option>
+      </select>
+      
+      <select id="category-filter" onchange="filterTasks()">
+        <option value="all">All categories</option>
+        <option value="Tasks Before the Event">Tasks Before the Event</option>
+        <option value="Tasks During the Event">Tasks During the Event</option>
+        <option value="Tasks After the Event">Tasks After the Event</option>
+      </select>
+      
+      <div class="checkbox-container">
+        <input type="checkbox" id="my-tasks-filter" onchange="filterTasks()">
+        <label for="my-tasks-filter">My tasks only</label>
+      </div>
+    </div>
+    
+    <!-- Tracking Table -->
+    <table id="tracking-table">
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>Category</th>
+          <th>Assigned to</th>
+          <th>Deadline</th>
+          <th>Time</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Table rows will be dynamically generated -->
+      </tbody>
+    </table>
   </div>
   
   <!-- Modal for displaying assignees -->
@@ -788,19 +812,19 @@
       return userTitle.includes('teacher') || userTitle.includes('prof') || userTitle.includes('enseignant');
     }
     
-    // Tab functionality
-    function openTab(evt, tabName) {
-      var i, tabcontent, tablinks;
-      tabcontent = document.getElementsByClassName("tabcontent");
-      for (i = 0; i < tabcontent.length; i++) {
-        tabcontent[i].style.display = "none";
-      }
-      tablinks = document.getElementsByClassName("tablinks");
-      for (i = 0; i < tablinks.length; i++) {
-        tablinks[i].className = tablinks[i].className.replace(" active", "");
-      }
-      document.getElementById(tabName).style.display = "block";
-      evt.currentTarget.className += " active";
+    // New Tab functionality
+    function openNewTab(tabName) {
+      // Hide all content
+      document.getElementById('registration-content').style.display = 'none';
+      document.getElementById('tracking-content').style.display = 'none';
+      
+      // Remove active class from all buttons
+      document.getElementById('registration-tab').classList.remove('active');
+      document.getElementById('tracking-tab').classList.remove('active');
+      
+      // Show the selected content and mark button as active
+      document.getElementById(tabName + '-content').style.display = 'block';
+      document.getElementById(tabName + '-tab').classList.add('active');
       
       // Initialize tracking tab when opened
       if (tabName === 'tracking') {
@@ -1410,7 +1434,7 @@
       document.getElementById('confirmation-modal').style.display = 'none';
       
       // Switch to tracking tab
-      document.querySelector('.tablinks:nth-child(2)').click();
+      openNewTab('tracking');
     }
     
     // Function to change user
@@ -1549,8 +1573,8 @@
           <button class="action-btn" onclick="editTask('${taskId}')">Edit</button>
           <button class="action-btn remove-btn" onclick="removeTask('${taskId}', '')">Remove</button>
         `;
-        
-        // Add subtasks
+
+      // Add subtasks
         for (const subtaskId in taskInfo.subtasks) {
           const subtaskName = taskInfo.subtasks[subtaskId];
           
@@ -1562,7 +1586,7 @@
           subtaskRow.insertCell(0).textContent = subtaskName;
           subtaskRow.insertCell(1).textContent = taskInfo.category;
           
-           // Get people assigned to this subtask
+          // Get people assigned to this subtask
           const subtaskAssignees = getAllAssignedPeople(taskId, subtaskId);
           subtaskRow.insertCell(2).textContent = subtaskAssignees.length > 0 ? subtaskAssignees.join(', ') : 'Not assigned yet';
           
