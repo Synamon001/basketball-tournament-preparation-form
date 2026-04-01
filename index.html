@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BASKETBALL TOURNAMENT TASK SIGN UP FORM</title>
+  <title>BASKETBALL TOURNAMENT STAFF SIGN UP FORM</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -376,10 +376,40 @@
       background-color: #2ecc71; /* Vert */
       color: white;
     }
+    
+    /* Confirmation modal */
+    .confirmation-modal {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    
+    .confirmation-content {
+      background-color: white;
+      padding: 20px;
+      border-radius: 5px;
+      width: 60%;
+      max-width: 500px;
+      text-align: center;
+    }
+    
+    .confirmation-buttons {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
   </style>
 </head>
 <body>
-  <h1>BASKETBALL TOURNAMENT TASKS SIGN UP FORM</h1>
+  <h1>BASKETBALL TOURNAMENT STAFF SIGN UP FORM</h1>
   
   <!-- User Controls -->
   <div class="user-controls">
@@ -396,23 +426,24 @@
     
     <!-- Registration Tab -->
     <div id="registration" class="tabcontent" style="display: block;">
-      <h2>Register for 1 Task or more</h2>
+      <h2>Register for Micro-Tasks</h2>
       
       <!-- Event Information -->
       <div class="event-info">
-        <p><strong>Date:</strong> In May</p>
-        <p><strong>Time:</strong> (2 blocs) After lunch until 2:30 PM</p>
+        <p><strong>Event Date:</strong> In May 2026</p>
+        <p><strong>Time:</strong> In the afternoon, 2 blocs</p>
         <p><strong>Location:</strong> At school</p>
+        <p><strong>Organizer:</strong> B365 Club</p>
         <p><strong>Activities:</strong> Basketball tournament, game fair, food sales at the canteen</p>
         <p><strong>Entry:</strong> Tickets to be purchased (price to be determined)</p>
         <p>This event is organized by students and includes a basketball tournament (including a teachers' team) as well as a game fair. B365 students will also run a canteen to sell food to players and spectators.</p>
       </div>
       
       <div class="form-section">
-        <h3>Information</h3>
-        <label for="name"> First Name or Nickname <span class="required-label">*</span></label>
-        <input type="text" id="name OR nickname" required>
-          </div>
+        <h3>Personal Information</h3>
+        <label for="name">First Name or Nickname <span class="required-label">*</span></label>
+        <input type="text" id="name" required>
+      </div>
       
       <!-- Task Categories -->
       <div class="category-header">Tasks Before the Event</div>
@@ -702,6 +733,17 @@
     </div>
   </div>
   
+  <!-- Confirmation Modal -->
+  <div id="confirmation-modal" class="confirmation-modal">
+    <div class="confirmation-content">
+      <h3>Registration Confirmation</h3>
+      <p id="confirmation-message">Your task registration has been submitted successfully!</p>
+      <div class="confirmation-buttons">
+        <button onclick="closeConfirmationModal()">Close</button>
+      </div>
+    </div>
+  </div>
+  
   <script>
     // Function to get current user
     function getCurrentUser() {
@@ -735,6 +777,40 @@
       if (tabName === 'tracking') {
         initializeTrackingTab();
       }
+      
+      // Reset registration form when switching to registration tab
+      if (tabName === 'registration') {
+        resetRegistrationForm();
+      }
+    }
+    
+    // Function to reset registration form
+    function resetRegistrationForm() {
+      // Clear name field
+      document.getElementById('name').value = '';
+      
+      // Uncheck all task checkboxes
+      document.querySelectorAll('.task-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+      });
+      
+      // Reset all subtask selects
+      document.querySelectorAll('select[id$="-subtask"]').forEach(select => {
+        select.selectedIndex = 0;
+      });
+      
+      // Clear all date and time inputs
+      document.querySelectorAll('input[type="date"], input[type="time"]').forEach(input => {
+        input.value = '';
+      });
+      
+      // Clear all textareas
+      document.querySelectorAll('textarea').forEach(textarea => {
+        textarea.value = '';
+      });
+      
+      // Hide error message
+      document.getElementById('error-message').style.display = 'none';
     }
     
     // Function to toggle visibility of subtasks
@@ -825,14 +901,6 @@
     function collectTaskData(selectedTasks) {
       const taskData = [];
       const name = document.getElementById('name').value;
-      const email = document.getElementById('email').value;
-      const title = document.getElementById('class').value;
-      
-      // Collect selected skills
-      const selectedSkills = [];
-      document.querySelectorAll('.skill-checkbox:checked').forEach(checkbox => {
-        selectedSkills.push(checkbox.id.replace('skill-', ''));
-      });
       
       selectedTasks.forEach(taskCheckbox => {
         const taskId = taskCheckbox.value;
@@ -867,9 +935,6 @@
           subtaskId: subtaskId,
           subtaskName: subtaskName,
           name: name,
-          email: email,
-          title: title,
-          skills: selectedSkills,
           deadline: deadline,
           reminderDate: reminderDate,
           reminderTime: reminderTime,
@@ -879,6 +944,36 @@
       });
       
       return taskData;
+    }
+    
+    // Function to validate task registration
+    function validateTaskRegistration() {
+      const name = document.getElementById('name').value.trim();
+      const selectedTasks = Array.from(document.querySelectorAll('.task-checkbox:checked'));
+      
+      const errors = [];
+      
+      if (!name) {
+        errors.push("First Name or Nickname is required");
+      }
+      
+      if (selectedTasks.length === 0) {
+        errors.push("Please select at least one task");
+      } else {
+        // Check if subtasks are selected for checked tasks
+        for (const taskCheckbox of selectedTasks) {
+          const taskId = taskCheckbox.value;
+          const taskGroup = taskCheckbox.closest('.task-group');
+          const subtaskSelect = taskGroup.querySelector(`select[id="${taskId}-subtask"]`);
+          
+          if (subtaskSelect && !subtaskSelect.value) {
+            const taskLabel = taskGroup.querySelector('label').textContent;
+            errors.push(`Please select a specific micro-task for: ${taskLabel}`);
+          }
+        }
+      }
+      
+      return errors;
     }
     
     // Function to save task registration data - Allows multiple registrations
@@ -953,6 +1048,7 @@
           // Update actions
           mainTaskRow.cells[6].innerHTML = `
             <button class="action-btn" onclick="editTask('${taskId}')">Edit</button>
+            <button class="action-btn remove-btn" onclick="removeTask('${taskId}', '')">Remove</button>
           `;
         } else {
           // Find and update the specific subtask row
@@ -998,6 +1094,7 @@
               row.cells[6].innerHTML = `
                 <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
                 <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
+                <button class="action-btn remove-btn" onclick="removeTask('${taskId}', '${subtaskId}')">Remove</button>
               `;
               
               // Expand subtasks to show the assigned task
@@ -1013,25 +1110,69 @@
       }
     }
     
+    // Function to remove a task assignment
+    function removeTask(taskId, subtaskId) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        alert("Please identify yourself first to remove tasks.");
+        return;
+      }
+      
+      // Get all registered tasks
+      let registeredTasks = getRegisteredTasks();
+      
+      // Filter out the task for the current user
+      registeredTasks = registeredTasks.filter(task => {
+        if (task.taskId === taskId && task.subtaskId === subtaskId) {
+          return task.name !== currentUser;
+        }
+        return true;
+      });
+      
+      // Save updated tasks
+      localStorage.setItem('registeredTasks', JSON.stringify(registeredTasks));
+      
+      // Refresh the tracking table
+      initializeTrackingTable();
+      
+      // Show confirmation
+      alert("Your task assignment has been removed.");
+    }
+    
     // Function to update task status
     function updateTaskStatus(taskId, subtaskId, status) {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        alert("Please identify yourself first to update task status.");
+        return;
+      }
+      
       // Update status in localStorage
       let registeredTasks = getRegisteredTasks();
+      let userHasTask = false;
       
       if (subtaskId) {
         // Update a subtask
         registeredTasks.forEach(task => {
-          if (task.taskId === taskId && task.subtaskId === subtaskId) {
+          if (task.taskId === taskId && task.subtaskId === subtaskId && task.name === currentUser) {
             task.status = status;
+            userHasTask = true;
           }
         });
       } else {
         // Update a main task
         registeredTasks.forEach(task => {
-          if (task.taskId === taskId && (!task.subtaskId || task.subtaskId === '')) {
+          if (task.taskId === taskId && (!task.subtaskId || task.subtaskId === '') && task.name === currentUser) {
             task.status = status;
+            userHasTask = true;
           }
         });
+      }
+      
+      if (!userHasTask) {
+        alert("You can only update the status of tasks assigned to you.");
+        initializeTrackingTable(); // Refresh to revert the change
+        return;
       }
       
       localStorage.setItem('registeredTasks', JSON.stringify(registeredTasks));
@@ -1160,6 +1301,20 @@
     // Function to close the modal
     function closeModal() {
       document.getElementById('assignees-modal').style.display = 'none';
+    }
+    
+    // Function to show confirmation modal
+    function showConfirmationModal(message) {
+      document.getElementById('confirmation-message').textContent = message;
+      document.getElementById('confirmation-modal').style.display = 'flex';
+    }
+    
+    // Function to close confirmation modal
+    function closeConfirmationModal() {
+      document.getElementById('confirmation-modal').style.display = 'none';
+      
+      // Switch to tracking tab
+      document.querySelector('.tablinks:nth-child(2)').click();
     }
     
     // Function to change user
@@ -1293,7 +1448,10 @@
         
         // Actions
         const actionsCell = mainTaskRow.insertCell(6);
-        actionsCell.innerHTML = `<button class="action-btn" onclick="editTask('${taskId}')">Edit</button>`;
+        actionsCell.innerHTML = `
+          <button class="action-btn" onclick="editTask('${taskId}')">Edit</button>
+          <button class="action-btn remove-btn" onclick="removeTask('${taskId}', '')">Remove</button>
+        `;
         
         // Add subtasks
         for (const subtaskId in taskInfo.subtasks) {
@@ -1330,6 +1488,7 @@
           subtaskActionsCell.innerHTML = `
             <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
             <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
+            <button class="action-btn remove-btn" onclick="removeTask('${taskId}', '${subtaskId}')">Remove</button>
           `;
         }
       }
@@ -1362,14 +1521,13 @@
       const registerBtn = document.getElementById('register-btn');
       if (registerBtn) {
         registerBtn.addEventListener('click', function() {
-          const name = document.getElementById('name').value;
-          const email = document.getElementById('email').value;
-          const title = document.getElementById('class').value;
+          // Validate form
+          const validationErrors = validateTaskRegistration();
           
-          // Validate required fields
-          if (!name || !email || !title) {
+          if (validationErrors.length > 0) {
+            // Show specific errors
             const errorMessage = document.getElementById('error-message');
-            errorMessage.textContent = 'Please fill in all required fields.';
+            errorMessage.innerHTML = validationErrors.map(error => `<p>${error}</p>`).join('');
             errorMessage.style.display = 'block';
             return;
           }
@@ -1377,29 +1535,17 @@
           // Collect selected tasks
           const selectedTasks = Array.from(document.querySelectorAll('.task-checkbox:checked'));
           
-          if (selectedTasks.length === 0) {
-            const errorMessage = document.getElementById('error-message');
-            errorMessage.textContent = 'Please select at least one task.';
-            errorMessage.style.display = 'block';
-            return;
-          }
-          
           // Collect task data
           const taskData = collectTaskData(selectedTasks);
           
           // Save tasks
           saveTaskRegistration(taskData);
           
-          // Show confirmation message
-          alert('Task registration successful!');
+          // Show confirmation modal
+          showConfirmationModal('Your task registration has been submitted successfully!');
           
           // Reset form
-          document.querySelectorAll('.task-checkbox:checked').forEach(checkbox => {
-            checkbox.checked = false;
-          });
-          
-          // Redirect to tracking tab
-          document.querySelector('.tablinks:nth-child(2)').click();
+          resetRegistrationForm();
         });
       }
     });
