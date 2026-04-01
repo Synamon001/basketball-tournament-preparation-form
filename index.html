@@ -412,13 +412,37 @@
     #tracking-table td:nth-child(6) {
       min-width: 120px;
     }
+    
+    /* Subtitle style */
+    .subtitle {
+      color: #3498db;
+      margin-top: -10px;
+      margin-bottom: 20px;
+      font-size: 1.2em;
+    }
   </style>
 </head>
 <body>
   <h1>BASKETBALL TOURNAMENT TASKS SIGN UP FORM</h1>
-  <h2>Register for 1 Task or more</h2>
+  <h2 class="subtitle">Register for 1 Task or more</h2>
   
-  <!-- Event Information -->
+  <!-- User Controls -->
+  <div class="user-controls">
+    <span id="current-user-display" class="user-display"></span>
+    <button onclick="changeUser()">Change User</button>
+  </div>
+  
+  <!-- Tab Container -->
+  <div class="tab-container">
+    <div class="tab">
+      <button class="tablinks active" onclick="openTab(event, 'registration')">Task Registration</button>
+      <button class="tablinks" onclick="openTab(event, 'tracking')">Task Tracking</button>
+    </div>
+    
+    <!-- Registration Tab -->
+    <div id="registration" class="tabcontent" style="display: block;">
+      
+      <!-- Event Information -->
       <div class="event-info">
         <p><strong>Event Date:</strong> In May 2026</p>
         <p><strong>Time:</strong> In the afternoon, 2 blocs</p>
@@ -428,16 +452,6 @@
         <p><strong>Entry:</strong> Tickets to be purchased (price to be determined)</p>
         <p>This event is organized by students and includes a basketball tournament (including a teachers' team) as well as a game fair. B365 students will also run a canteen to sell food to players and spectators.</p>
       </div>
-  
-      <!-- User Controls -->
-  <div class="user-controls">
-    <span id="current-user-display" class="user-display"></span>
-    <button onclick="changeUser()">Change User</button>
-    <button class="tablinks" onclick="openTab(event, 'tracking')">Task Tracking</button>
-  </div>
-    
-    <!-- Registration Tab -->
-    <div id="registration" class="tabcontent" style="display: block;">
       
       <div class="form-section">
         <h3>Information</h3>
@@ -447,13 +461,7 @@
         <label for="title">Title (student, teacher, etc) <span class="required-label">*</span></label>
         <input type="text" id="title" required>
       </div>
-
-      <!-- Tab Container -->
-  <div class="tab-container">
-    <div class="tab">
-      <button class="tablinks active" onclick="openTab(event, 'registration')">Task Registration</button>
-    </div>
-    
+      
       <!-- Task Categories -->
       <div class="category-header">Tasks Before the Event</div>
       
@@ -1554,15 +1562,15 @@
           subtaskRow.insertCell(0).textContent = subtaskName;
           subtaskRow.insertCell(1).textContent = taskInfo.category;
           
-          // Get people assigned to this subtask
+           // Get people assigned to this subtask
           const subtaskAssignees = getAllAssignedPeople(taskId, subtaskId);
           subtaskRow.insertCell(2).textContent = subtaskAssignees.length > 0 ? subtaskAssignees.join(', ') : 'Not assigned yet';
           
           // Deadline and time
           subtaskRow.insertCell(3).textContent = '';
           subtaskRow.insertCell(4).textContent = '';
-
-        // Default status
+          
+          // Default status
           const subtaskStatusCell = subtaskRow.insertCell(5);
           subtaskStatusCell.innerHTML = `
             <select class="status-select status-not-started" onchange="updateTaskStatus('${taskId}', '${subtaskId}', this.value)">
