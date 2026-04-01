@@ -340,8 +340,8 @@
     }
     
     .status-select.status-in-progress {
-      background-color: #f39c12; /* Orange */
-      border-color: #d35400;
+      background-color: #f1c40f; /* Yellow */
+      border-color: #f39c12;
     }
     
     .status-select.status-completed {
@@ -368,7 +368,7 @@
     }
     
     .status-in-progress {
-      background-color: #f39c12; /* Orange */
+      background-color: #f1c40f; /* Yellow */
       color: white;
     }
     
@@ -446,6 +446,27 @@
     
     .new-tab button.active {
       background-color: #2c3e50;
+    }
+    
+    /* Style for assigned users (bold) */
+    .assigned-user {
+      font-weight: bold;
+    }
+    
+    .not-assigned {
+      font-weight: normal;
+      font-style: italic;
+    }
+    
+    /* Auto-refresh notification */
+    .refresh-notice {
+      background-color: #d4edda;
+      color: #155724;
+      padding: 5px 10px;
+      border-radius: 3px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      text-align: center;
     }
   </style>
 </head>
@@ -720,6 +741,10 @@
   <div id="tracking-content" style="display: none;">
     <h2>Task Tracking</h2>
     
+    <div class="refresh-notice">
+      <p>Task tracking data is automatically updated every 30 seconds</p>
+    </div>
+    
     <!-- Filters and Search -->
     <div class="search-box">
       <input type="text" id="task-search" placeholder="Search tasks..." onkeyup="searchTasks()">
@@ -794,7 +819,13 @@
         currentUser = prompt('Please enter your name to identify your tasks:');
         if (currentUser) {
           localStorage.setItem('currentUser', currentUser);
+          
+          // Auto-fill the name field with the current user's name
+          document.getElementById('name').value = currentUser;
         }
+      } else {
+        // Auto-fill the name field with the current user's name
+        document.getElementById('name').value = currentUser;
       }
       
       return currentUser;
@@ -803,6 +834,10 @@
     // Function to get current user's title
     function getUserTitle() {
       let userTitle = localStorage.getItem('userTitle');
+      if (userTitle) {
+        // Auto-fill the title field with the stored title
+        document.getElementById('title').value = userTitle;
+      }
       return userTitle || '';
     }
     
@@ -839,9 +874,13 @@
     
     // Function to reset registration form
     function resetRegistrationForm() {
-      // Clear name field
-      document.getElementById('name').value = '';
-      document.getElementById('title').value = '';
+      // Don't clear name field anymore - keep the current user's name
+      const currentUser = getCurrentUser();
+      document.getElementById('name').value = currentUser || '';
+      
+      // Keep the title if it exists
+      const userTitle = getUserTitle();
+      document.getElementById('title').value = userTitle || '';
       
       // Uncheck all task checkboxes
       document.querySelectorAll('.task-checkbox').forEach(checkbox => {
@@ -1063,6 +1102,12 @@
       return names;
     }
     
+    // Function to check if a task/subtask has any assignees
+    function hasAssignees(taskId, subtaskId) {
+      const assignees = getAllAssignedPeople(taskId, subtaskId);
+      return assignees.length > 0;
+    }
+    
     // Function to update a task in the tracking table
     function updateTaskInTrackingTable(task) {
       const taskId = task.taskId;
@@ -1088,8 +1133,12 @@
           // Get all people assigned to this main task
           const assignedPeople = getAllAssignedPeople(taskId, '');
           
-          // Update the cell with all assigned people
-          mainTaskRow.cells[2].textContent = assignedPeople.length > 0 ? assignedPeople.join(', ') : 'Not assigned yet';
+          // Update the cell with all assigned people - now with bold formatting
+          if (assignedPeople.length > 0) {
+            mainTaskRow.cells[2].innerHTML = `<span class="assigned-user">${assignedPeople.join(', ')}</span>`;
+          } else {
+            mainTaskRow.cells[2].innerHTML = `<span class="not-assigned">Not assigned yet</span>`;
+          }
           
           // Update deadline (use the closest one)
           const deadlines = getRegisteredTasks()
@@ -1111,10 +1160,11 @@
             </select>
           `;
           
-          // Update actions
+          // Update actions - show remove button only if task has assignees
+          const hasAssigneesForTask = hasAssignees(taskId, '');
           mainTaskRow.cells[6].innerHTML = `
             <button class="action-btn" onclick="editTask('${taskId}')">Edit</button>
-            <button class="action-btn remove-btn" onclick="removeTask('${taskId}', '')">Remove</button>
+            ${hasAssigneesForTask ? `<button class="action-btn remove-btn" onclick="removeTask('${taskId}', '')">Remove</button>` : ''}
           `;
         } else {
           // Find and update the specific subtask row
@@ -1128,8 +1178,12 @@
               // Get all people assigned to this micro-task
               const assignedPeople = getAllAssignedPeople(taskId, subtaskId);
               
-              // Update the cell with all assigned people
-              row.cells[2].textContent = assignedPeople.length > 0 ? assignedPeople.join(', ') : 'Not assigned yet';
+              // Update the cell with all assigned people - now with bold formatting
+              if (assignedPeople.length > 0) {
+                row.cells[2].innerHTML = `<span class="assigned-user">${assignedPeople.join(', ')}</span>`;
+              } else {
+                row.cells[2].innerHTML = `<span class="not-assigned">Not assigned yet</span>`;
+              }
               
               // Update deadline (use the closest one)
               const deadlines = getRegisteredTasks()
@@ -1156,11 +1210,12 @@
                 </select>
               `;
               
-              // Update actions
+              // Update actions - show remove button only if subtask has assignees
+              const hasAssigneesForSubtask = hasAssignees(taskId, subtaskId);
               row.cells[6].innerHTML = `
                 <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
                 <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
-                <button class="action-btn remove-btn" onclick="removeTask('${taskId}', '${subtaskId}')">Remove</button>
+                ${hasAssigneesForSubtask ? `<button class="action-btn remove-btn" onclick="removeTask('${taskId}', '${subtaskId}')">Remove</button>` : ''}
               `;
               
               // Expand subtasks to show the assigned task
@@ -1448,6 +1503,9 @@
           userDisplay.textContent = `User: ${newUser}`;
         }
         
+        // Auto-fill the name field with the new user's name
+        document.getElementById('name').value = newUser;
+        
         // Refresh filters
         filterTasks();
       }
@@ -1520,10 +1578,10 @@
             'subtask6-1': 'Draft thank you messages',
             'subtask6-2': 'Identify all contributors',
             'subtask6-3': 'Send thank you communications'
-          }
+              }
         },
         'task7': { 
-          name: 'Final Event Report', 
+        name: 'Final Event Report', 
           category: 'Tasks After the Event', 
           subtasks: {
             'subtask7-1': 'Gather information from all teams',
@@ -1551,7 +1609,14 @@
         
         // Get people assigned to this main task
         const assignedPeople = getAllAssignedPeople(taskId, '');
-        mainTaskRow.insertCell(2).textContent = assignedPeople.length > 0 ? assignedPeople.join(', ') : 'Not assigned yet';
+        
+        // Add assigned people with proper formatting
+        const assignedCell = mainTaskRow.insertCell(2);
+        if (assignedPeople.length > 0) {
+          assignedCell.innerHTML = `<span class="assigned-user">${assignedPeople.join(', ')}</span>`;
+        } else {
+          assignedCell.innerHTML = `<span class="not-assigned">Not assigned yet</span>`;
+        }
         
         // Deadline and time
         mainTaskRow.insertCell(3).textContent = '';
@@ -1567,14 +1632,15 @@
           </select>
         `;
         
-        // Actions
+        // Actions - only show remove button if there are assignees
+        const hasAssigneesForTask = hasAssignees(taskId, '');
         const actionsCell = mainTaskRow.insertCell(6);
         actionsCell.innerHTML = `
           <button class="action-btn" onclick="editTask('${taskId}')">Edit</button>
-          <button class="action-btn remove-btn" onclick="removeTask('${taskId}', '')">Remove</button>
+          ${hasAssigneesForTask ? `<button class="action-btn remove-btn" onclick="removeTask('${taskId}', '')">Remove</button>` : ''}
         `;
-
-      // Add subtasks
+        
+        // Add subtasks
         for (const subtaskId in taskInfo.subtasks) {
           const subtaskName = taskInfo.subtasks[subtaskId];
           
@@ -1588,7 +1654,14 @@
           
           // Get people assigned to this subtask
           const subtaskAssignees = getAllAssignedPeople(taskId, subtaskId);
-          subtaskRow.insertCell(2).textContent = subtaskAssignees.length > 0 ? subtaskAssignees.join(', ') : 'Not assigned yet';
+          
+          // Add assigned people with proper formatting
+          const subtaskAssignedCell = subtaskRow.insertCell(2);
+          if (subtaskAssignees.length > 0) {
+            subtaskAssignedCell.innerHTML = `<span class="assigned-user">${subtaskAssignees.join(', ')}</span>`;
+          } else {
+            subtaskAssignedCell.innerHTML = `<span class="not-assigned">Not assigned yet</span>`;
+          }
           
           // Deadline and time
           subtaskRow.insertCell(3).textContent = '';
@@ -1604,12 +1677,13 @@
             </select>
           `;
           
-          // Actions
+          // Actions - only show remove button if there are assignees
+          const hasAssigneesForSubtask = hasAssignees(taskId, subtaskId);
           const subtaskActionsCell = subtaskRow.insertCell(6);
           subtaskActionsCell.innerHTML = `
             <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
             <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
-            <button class="action-btn remove-btn" onclick="removeTask('${taskId}', '${subtaskId}')">Remove</button>
+            ${hasAssigneesForSubtask ? `<button class="action-btn remove-btn" onclick="removeTask('${taskId}', '${subtaskId}')">Remove</button>` : ''}
           `;
         }
       }
@@ -1619,6 +1693,16 @@
       registeredTasks.forEach(task => {
         updateTaskInTrackingTable(task);
       });
+    }
+    
+    // Function to set up auto-refresh for tracking table
+    function setupAutoRefresh() {
+      // Refresh tracking table every 30 seconds
+      setInterval(() => {
+        if (document.getElementById('tracking-content').style.display !== 'none') {
+          initializeTrackingTable();
+        }
+      }, 30000); // 30 seconds
     }
     
     // Initialize tracking tab
@@ -1636,6 +1720,12 @@
         if (userDisplay) {
           userDisplay.textContent = `User: ${currentUser}`;
         }
+        
+        // Auto-fill the name field with the current user's name
+        document.getElementById('name').value = currentUser;
+        
+        // Auto-fill the title if available
+        getUserTitle();
       }
       
       // Set up event handler for the registration button
@@ -1669,6 +1759,9 @@
           resetRegistrationForm();
         });
       }
+      
+      // Set up auto-refresh for tracking table
+      setupAutoRefresh();
     });
   </script>
 </body>
