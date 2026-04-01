@@ -378,219 +378,653 @@
   </style>
 </head>
 <body>
-  <!-- Le reste du code HTML reste identique, je l'omets pour la clarté -->
+  <!-- Structure HTML de base pour les onglets -->
+  <div class="tab-container">
+    <div class="tab">
+      <button class="tablinks" onclick="openTab(event, 'registration')">Task Registration</button>
+      <button class="tablinks" onclick="openTab(event, 'tracking')">Task Tracking</button>
+    </div>
+    
+    <div id="registration" class="tabcontent">
+      <!-- Contenu de l'onglet d'inscription des tâches -->
+      <h2>Task Registration</h2>
+      <div class="form-section">
+        <h3>Your Information</h3>
+        <label for="name">Your Name <span class="required-label">*</span></label>
+        <input type="text" id="name" name="name" required>
+        
+        <label for="class">Your Title/Role <span class="required-label">*</span></label>
+        <input type="text" id="class" name="class" required>
+      </div>
+      
+      <!-- Ici vous pouvez ajouter plus de sections pour l'inscription des tâches -->
+      
+      <button id="submit-registration" class="submit-btn">Register for Selected Tasks</button>
+      <div id="error-message" class="error-message">Please fill in all required fields.</div>
+    </div>
+    
+    <div id="tracking" class="tabcontent">
+      <!-- Contenu de l'onglet de suivi des tâches -->
+      <h2>Task Tracking</h2>
+      
+      <div class="user-controls">
+        <span>Current User: <span class="user-display">Not set</span></span>
+        <button onclick="changeUser()">Change User</button>
+      </div>
+      
+      <div class="search-box">
+        <input type="text" id="task-search" placeholder="Search tasks..." onkeyup="searchTasks()">
+        <button onclick="searchTasks()">Search</button>
+      </div>
+      
+      <div class="filter-options">
+        <div>
+          <label for="status-filter">Status:</label>
+          <select id="status-filter" onchange="filterTasks()">
+            <option value="all">All Statuses</option>
+            <option value="not-started">Not Started</option>
+            <option value="in-progress">In Progress</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        
+        <div>
+          <label for="category-filter">Category:</label>
+          <select id="category-filter" onchange="filterTasks()">
+            <option value="all">All Categories</option>
+            <option value="setup">Setup</option>
+            <option value="registration">Registration</option>
+            <option value="game">Game Management</option>
+          </select>
+        </div>
+        
+        <div class="checkbox-container">
+          <input type="checkbox" id="my-tasks-filter" onchange="filterTasks()">
+          <label for="my-tasks-filter">Show only my tasks</label>
+        </div>
+      </div>
+      
+      <table id="tracking-table">
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th>Category</th>
+            <th>Assigned To</th>
+            <th>Deadline</th>
+            <th>Time</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Le contenu du tableau sera généré dynamiquement par JavaScript -->
+        </tbody>
+      </table>
+    </div>
+  </div>
   
   <script>
-    // Fonction pour obtenir l'utilisateur actuel
+    // Fonction pour obtenir l'utilisateur actuel avec gestion d'erreurs
     function getCurrentUser() {
-      let currentUser = localStorage.getItem('currentUser');
-      
-      if (!currentUser) {
-        currentUser = prompt('Please enter your name to identify your tasks:');
-        if (currentUser) {
-          localStorage.setItem('currentUser', currentUser);
-        }
-      }
-      
-      return currentUser;
-    }
-    
-    // Tab functionality
-    function openTab(evt, tabName) {
-      var i, tabcontent, tablinks;
-      tabcontent = document.getElementsByClassName("tabcontent");
-      for (i = 0; i < tabcontent.length; i++) {
-        tabcontent[i].style.display = "none";
-      }
-      tablinks = document.getElementsByClassName("tablinks");
-      for (i = 0; i < tablinks.length; i++) {
-        tablinks[i].className = tablinks[i].className.replace(" active", "");
-      }
-      document.getElementById(tabName).style.display = "block";
-      evt.currentTarget.className += " active";
-      
-      // Initialize tracking tab when opened
-      if (tabName === 'tracking') {
-        initializeTrackingTab();
-      }
-    }
-    
-    // Function to toggle visibility of subtasks
-    function toggleSubtasks(parentId) {
-      const subtasks = document.querySelectorAll(`tr[data-parent="${parentId}"]`);
-      const button = event.target;
-      
-      subtasks.forEach(row => {
-        if (row.classList.contains('hidden')) {
-          row.classList.remove('hidden');
-          button.textContent = '-';
-        } else {
-          row.classList.add('hidden');
-          button.textContent = '+';
-        }
-      });
-    }
-    
-    // Function to search tasks
-    function searchTasks() {
-      const searchText = document.getElementById('task-search').value.toLowerCase();
-      const rows = document.querySelectorAll('#tracking-table tbody tr:not(.task-category)');
-      
-      rows.forEach(row => {
-        const taskName = row.cells[0].textContent.toLowerCase();
-        if (taskName.includes(searchText)) {
-          row.style.display = '';
-          
-          // If it's a subtask, also show its parent category
-          if (row.classList.contains('subtask-row')) {
-            const parentId = row.getAttribute('data-parent');
-            const parentRows = document.querySelectorAll(`tr.main-task`);
-            parentRows.forEach(parentRow => {
-              if (parentRow.cells[0].textContent.toLowerCase().includes(parentId.toLowerCase())) {
-                parentRow.style.display = '';
-              }
-            });
+      try {
+        let currentUser = localStorage.getItem('currentUser');
+        
+        if (!currentUser) {
+          currentUser = prompt('Please enter your name to identify your tasks:');
+          if (currentUser) {
+            localStorage.setItem('currentUser', currentUser);
           }
-        } else {
-          row.style.display = 'none';
         }
-      });
+        
+        return currentUser;
+      } catch (error) {
+        console.error('Error getting current user:', error);
+        return null;
+      }
     }
     
-    // Function to filter tasks by status, category, and user
-    function filterTasks() {
-      const statusFilter = document.getElementById('status-filter').value;
-      const categoryFilter = document.getElementById('category-filter').value;
-      const currentUser = getCurrentUser();
-      const showOnlyMyTasks = document.getElementById('my-tasks-filter').checked;
-      
-      const rows = document.querySelectorAll('#tracking-table tbody tr:not(.task-category)');
-      
-      rows.forEach(row => {
-        let showRow = true;
-        
-        // Status filtering
-        if (statusFilter !== 'all') {
-          const statusText = row.cells[5].textContent.toLowerCase();
-          if (statusFilter === 'not-started' && !statusText.includes('not started')) showRow = false;
-          if (statusFilter === 'in-progress' && !statusText.includes('in progress')) showRow = false;
-          if (statusFilter === 'completed' && !statusText.includes('completed')) showRow = false;
+    // Fonction pour changer l'utilisateur actuel
+    function changeUser() {
+      try {
+        const newUser = prompt('Enter your name:');
+        if (newUser) {
+          localStorage.setItem('currentUser', newUser);
+          
+          // Mettre à jour l'affichage de l'utilisateur
+          const userDisplay = document.querySelector('.user-display');
+          if (userDisplay) {
+            userDisplay.textContent = newUser;
+          }
+          
+          // Rafraîchir le tableau de suivi
+          initializeTrackingTab();
         }
-        
-        // Category filtering
-        if (categoryFilter !== 'all') {
-          const categoryText = row.cells[1].textContent.toLowerCase();
-          if (!categoryText.includes(categoryFilter.toLowerCase())) showRow = false;
-        }
-        
-        // User filtering
-        if (showOnlyMyTasks && currentUser) {
-          const assignedTo = row.cells[2].textContent;
-          if (!assignedTo.includes(currentUser)) showRow = false;
-        }
-        
-        row.style.display = showRow ? '' : 'none';
-      });
+      } catch (error) {
+        console.error('Error changing user:', error);
+      }
     }
     
-    // Function to get registered tasks from localStorage
-    function getRegisteredTasks() {
-      const tasksJson = localStorage.getItem('registeredTasks');
-      return tasksJson ? JSON.parse(tasksJson) : [];
+    // Tab functionality avec gestion d'erreurs
+    function openTab(evt, tabName) {
+      try {
+        console.log(`Opening tab: ${tabName}`);
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tabcontent");
+        for (i = 0; i < tabcontent.length; i++) {
+          tabcontent[i].style.display = "none";
+        }
+        tablinks = document.getElementsByClassName("tablinks");
+        for (i = 0; i < tablinks.length; i++) {
+          tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+        document.getElementById(tabName).style.display = "block";
+        evt.currentTarget.className += " active";
+        
+        // Initialize tracking tab when opened
+        if (tabName === 'tracking') {
+          initializeTrackingTab();
+        }
+      } catch (error) {
+        console.error(`Error opening tab ${tabName}:`, error);
+      }
     }
     
-    // Function to collect task data from selected tasks
-    function collectTaskData(selectedTasks) {
-      const taskData = [];
-      const name = document.getElementById('name').value;
-      const title = document.getElementById('class').value;
-      
-      selectedTasks.forEach(taskCheckbox => {
-        const taskId = taskCheckbox.value;
-        const taskGroup = taskCheckbox.closest('.task-group');
+    // Function to toggle visibility of subtasks with gestion d'erreurs
+    function toggleSubtasks(parentId) {
+      try {
+        console.log(`Toggling subtasks for parent: ${parentId}`);
+        const subtasks = document.querySelectorAll(`tr[data-parent="${parentId}"]`);
+        const button = event.target;
         
-        // Find the subtask select element
-        const subtaskSelect = taskGroup.querySelector(`select[id="${taskId}-subtask"]`);
-        let subtaskId = '';
-        let subtaskName = '';
-        
-        if (subtaskSelect && subtaskSelect.value) {
-          subtaskId = subtaskSelect.value;
-          subtaskName = subtaskSelect.options[subtaskSelect.selectedIndex].text;
+        if (subtasks.length === 0) {
+          console.log(`No subtasks found for parent: ${parentId}`);
         }
         
-        // Get deadline if available
-        const deadlineInput = taskGroup.querySelector(`input[id="${taskId}-deadline"]`);
-        const deadline = deadlineInput ? deadlineInput.value : '';
-        
-        // Get reminder information
-        const reminderDateInput = taskGroup.querySelector(`input[id="${taskId}-reminder-date"]`);
-        const reminderTimeInput = taskGroup.querySelector(`input[id="${taskId}-reminder-time"]`);
-        const reminderDate = reminderDateInput ? reminderDateInput.value : '';
-        const reminderTime = reminderTimeInput ? reminderTimeInput.value : '';
-        
-        // Get notes
-        const notesTextarea = taskGroup.querySelector(`textarea[id="${taskId}-notes"]`);
-        const notes = notesTextarea ? notesTextarea.value : '';
-        
-        taskData.push({
-          taskId: taskId,
-          subtaskId: subtaskId,
-          subtaskName: subtaskName,
-          name: name,
-          title: title,
-          deadline: deadline,
-          reminderDate: reminderDate,
-          reminderTime: reminderTime,
-          notes: notes,
-          status: 'not-started' // Statut par défaut: Not started
+        subtasks.forEach(row => {
+          if (row.classList.contains('hidden')) {
+            row.classList.remove('hidden');
+            button.textContent = '-';
+          } else {
+            row.classList.add('hidden');
+            button.textContent = '+';
+          }
         });
-      });
-      
-      return taskData;
+      } catch (error) {
+        console.error(`Error toggling subtasks for ${parentId}:`, error);
+      }
     }
     
-    // Function to save task registration data - Allows multiple registrations
+    // Function to search tasks with gestion d'erreurs
+    function searchTasks() {
+      try {
+        const searchText = document.getElementById('task-search').value.toLowerCase();
+        console.log(`Searching for: ${searchText}`);
+        
+        const rows = document.querySelectorAll('#tracking-table tbody tr:not(.task-category)');
+        
+        if (rows.length === 0) {
+          console.log('No rows found in tracking table');
+          return;
+        }
+        
+        rows.forEach(row => {
+          const taskName = row.cells[0].textContent.toLowerCase();
+          if (taskName.includes(searchText)) {
+            row.style.display = '';
+            
+            // If it's a subtask, also show its parent category
+            if (row.classList.contains('subtask-row')) {
+              const parentId = row.getAttribute('data-parent');
+              const parentRows = document.querySelectorAll(`tr.main-task`);
+              parentRows.forEach(parentRow => {
+                if (parentRow.cells[0].textContent.toLowerCase().includes(parentId.toLowerCase())) {
+                  parentRow.style.display = '';
+                }
+              });
+            }
+          } else {
+            row.style.display = 'none';
+          }
+        });
+      } catch (error) {
+        console.error('Error searching tasks:', error);
+      }
+    }
+    
+    // Function to filter tasks by status, category, and user with gestion d'erreurs
+    function filterTasks() {
+      try {
+        const statusFilter = document.getElementById('status-filter');
+        const categoryFilter = document.getElementById('category-filter');
+        const myTasksFilter = document.getElementById('my-tasks-filter');
+        
+        if (!statusFilter || !categoryFilter || !myTasksFilter) {
+          console.error('Filter elements not found');
+          return;
+        }
+        
+        const statusValue = statusFilter.value;
+        const categoryValue = categoryFilter.value;
+        const showOnlyMyTasks = myTasksFilter.checked;
+        
+        console.log(`Filtering - Status: ${statusValue}, Category: ${categoryValue}, My Tasks Only: ${showOnlyMyTasks}`);
+        
+        const currentUser = getCurrentUser();
+        const rows = document.querySelectorAll('#tracking-table tbody tr:not(.task-category)');
+        
+        if (rows.length === 0) {
+          console.log('No rows found in tracking table');
+          return;
+        }
+        
+        rows.forEach(row => {
+          let showRow = true;
+          
+          // Status filtering
+          if (statusValue !== 'all') {
+            const statusCell = row.cells[5];
+            if (!statusCell) {
+              console.warn('Status cell not found in row', row);
+              showRow = false;
+            } else {
+              const statusText = statusCell.textContent.toLowerCase();
+              if (statusValue === 'not-started' && !statusText.includes('not started')) showRow = false;
+              if (statusValue === 'in-progress' && !statusText.includes('in progress')) showRow = false;
+              if (statusValue === 'completed' && !statusText.includes('completed')) showRow = false;
+            }
+          }
+          
+          // Category filtering
+          if (categoryValue !== 'all') {
+            const categoryCell = row.cells[1];
+            if (!categoryCell) {
+              console.warn('Category cell not found in row', row);
+              showRow = false;
+            } else {
+              const categoryText = categoryCell.textContent.toLowerCase();
+              if (!categoryText.includes(categoryValue.toLowerCase())) showRow = false;
+            }
+          }
+          
+          // User filtering
+          if (showOnlyMyTasks && currentUser) {
+            const assignedCell = row.cells[2];
+            if (!assignedCell) {
+              console.warn('Assigned cell not found in row', row);
+              showRow = false;
+            } else {
+              const assignedTo = assignedCell.textContent;
+              if (!assignedTo.includes(currentUser)) showRow = false;
+            }
+          }
+          
+          row.style.display = showRow ? '' : 'none';
+        });
+      } catch (error) {
+        console.error('Error filtering tasks:', error);
+      }
+    }
+    
+    // Function to get registered tasks from localStorage with gestion d'erreurs
+    function getRegisteredTasks() {
+      try {
+        const tasksJson = localStorage.getItem('registeredTasks');
+        return tasksJson ? JSON.parse(tasksJson) : [];
+      } catch (error) {
+        console.error('Error loading tasks from localStorage:', error);
+        return [];
+      }
+    }
+    
+    // Function to collect task data from selected tasks with gestion d'erreurs
+    function collectTaskData(selectedTasks) {
+      try {
+        const taskData = [];
+        const nameInput = document.getElementById('name');
+        const titleInput = document.getElementById('class');
+        
+        if (!nameInput || !titleInput) {
+          console.error('Name or title input not found');
+          return [];
+        }
+        
+        const name = nameInput.value;
+        const title = titleInput.value;
+        
+        selectedTasks.forEach(taskCheckbox => {
+          const taskId = taskCheckbox.value;
+          const taskGroup = taskCheckbox.closest('.task-group');
+          
+          if (!taskGroup) {
+            console.warn(`Task group not found for task: ${taskId}`);
+            return;
+          }
+          
+          // Find the subtask select element
+          const subtaskSelect = taskGroup.querySelector(`select[id="${taskId}-subtask"]`);
+          let subtaskId = '';
+          let subtaskName = '';
+          
+          if (subtaskSelect && subtaskSelect.value) {
+            subtaskId = subtaskSelect.value;
+            subtaskName = subtaskSelect.options[subtaskSelect.selectedIndex].text;
+          }
+          
+          // Get deadline if available
+          const deadlineInput = taskGroup.querySelector(`input[id="${taskId}-deadline"]`);
+          const deadline = deadlineInput ? deadlineInput.value : '';
+          
+          // Get reminder information
+          const reminderDateInput = taskGroup.querySelector(`input[id="${taskId}-reminder-date"]`);
+          const reminderTimeInput = taskGroup.querySelector(`input[id="${taskId}-reminder-time"]`);
+          const reminderDate = reminderDateInput ? reminderDateInput.value : '';
+          const reminderTime = reminderTimeInput ? reminderTimeInput.value : '';
+          
+          // Get notes
+          const notesTextarea = taskGroup.querySelector(`textarea[id="${taskId}-notes"]`);
+          const notes = notesTextarea ? notesTextarea.value : '';
+          
+          taskData.push({
+            taskId: taskId,
+            subtaskId: subtaskId,
+            subtaskName: subtaskName,
+            name: name,
+            title: title,
+            deadline: deadline,
+            reminderDate: reminderDate,
+            reminderTime: reminderTime,
+            notes: notes,
+            status: 'not-started' // Statut par défaut: Not started
+          });
+        });
+        
+        return taskData;
+      } catch (error) {
+        console.error('Error collecting task data:', error);
+        return [];
+      }
+    }
+    
+    // Function to save task registration data with gestion d'erreurs
     function saveTaskRegistration(taskData) {
-      let registeredTasks = getRegisteredTasks();
-      
-      // Simply add the new tasks without checking for duplicates
-      registeredTasks = registeredTasks.concat(taskData);
-      
-      localStorage.setItem('registeredTasks', JSON.stringify(registeredTasks));
+      try {
+        if (!taskData || taskData.length === 0) {
+          console.warn('No task data to save');
+          return false;
+        }
+        
+        let registeredTasks = getRegisteredTasks();
+        
+        // Simply add the new tasks without checking for duplicates
+        registeredTasks = registeredTasks.concat(taskData);
+        
+        localStorage.setItem('registeredTasks', JSON.stringify(registeredTasks));
+        console.log(`Saved ${taskData.length} tasks to localStorage`);
+        return true;
+      } catch (error) {
+        console.error('Error saving task registration:', error);
+        return false;
+      }
     }
     
-    // Function to get all people assigned to a specific task/subtask
+    // Function to get all people assigned to a specific task/subtask with gestion d'erreurs
     function getAllAssignedPeople(taskId, subtaskId) {
-      const tasks = getRegisteredTasks().filter(t => 
-        t.taskId === taskId && t.subtaskId === subtaskId
-      );
-      
-      // Extract unique names
-      const names = [...new Set(tasks.map(t => t.name))];
-      return names;
+      try {
+        const tasks = getRegisteredTasks().filter(t => 
+          t.taskId === taskId && t.subtaskId === subtaskId
+        );
+        
+        // Extract unique names
+        const names = [...new Set(tasks.map(t => t.name))];
+        return names;
+      } catch (error) {
+        console.error(`Error getting assigned people for task ${taskId}, subtask ${subtaskId}:`, error);
+        return [];
+      }
+    }
+    
+    // Fonction pour initialiser le tableau de suivi des tâches
+    function initializeTrackingTable() {
+      try {
+        console.log('Initializing tracking table');
+        const trackingTable = document.getElementById('tracking-table');
+        if (!trackingTable) {
+          console.error('Tracking table not found');
+          return;
+        }
+        
+        const tbody = trackingTable.querySelector('tbody');
+        if (!tbody) {
+          console.error('Table body not found');
+          return;
+        }
+        
+        // Effacer le contenu existant
+        tbody.innerHTML = '';
+        
+        // Obtenir toutes les tâches enregistrées
+        const tasks = getRegisteredTasks();
+        console.log('Loaded tasks:', tasks);
+        
+        if (tasks.length === 0) {
+          const row = document.createElement('tr');
+          row.innerHTML = '<td colspan="7" style="text-align: center;">No tasks registered yet</td>';
+          tbody.appendChild(row);
+          return;
+        }
+        
+        // Regrouper les tâches par ID de tâche principale
+        const taskGroups = {};
+        tasks.forEach(task => {
+          const taskId = task.taskId;
+          if (!taskGroups[taskId]) {
+            taskGroups[taskId] = {
+              mainTask: null,
+              subtasks: []
+            };
+          }
+          
+          if (!task.subtaskId || task.subtaskId === '') {
+            taskGroups[taskId].mainTask = task;
+          } else {
+            taskGroups[taskId].subtasks.push(task);
+          }
+        });
+        
+        // Ajouter les tâches au tableau
+        Object.keys(taskGroups).forEach(taskId => {
+          const group = taskGroups[taskId];
+          const mainTask = group.mainTask;
+          
+          // Ajouter la tâche principale
+          if (mainTask) {
+            const mainRow = document.createElement('tr');
+            mainRow.className = 'main-task';
+            
+            mainRow.innerHTML = `
+              <td>
+                <button class="expand-btn" onclick="toggleSubtasks('${taskId}')">+</button>
+                ${taskId}
+              </td>
+              <td>Main Task</td>
+              <td>${mainTask.name || 'Not assigned yet'}</td>
+              <td>${mainTask.deadline || 'No deadline'}</td>
+              <td>${mainTask.reminderTime || '-'}</td>
+              <td>
+                <select class="status-select status-${mainTask.status || 'not-started'}" onchange="updateTaskStatus('${taskId}', '', this.value)">
+                  <option value="not-started" ${(mainTask.status === 'not-started' || !mainTask.status) ? 'selected' : ''}>Not started</option>
+                  <option value="in-progress" ${mainTask.status === 'in-progress' ? 'selected' : ''}>In progress</option>
+                  <option value="completed" ${mainTask.status === 'completed' ? 'selected' : ''}>Completed</option>
+                </select>
+              </td>
+              <td>
+                <button class="action-btn" onclick="editTask('${taskId}')">Edit</button>
+              </td>
+            `;
+            
+            tbody.appendChild(mainRow);
+          }
+          
+          // Ajouter les sous-tâches
+          group.subtasks.forEach(subtask => {
+            const subtaskRow = document.createElement('tr');
+            subtaskRow.className = 'subtask-row hidden';
+            subtaskRow.setAttribute('data-parent', taskId);
+            
+            subtaskRow.innerHTML = `
+              <td>${subtask.subtaskName || 'Unknown subtask'}</td>
+              <td>${subtask.title || 'No category'}</td>
+              <td>${subtask.name || 'Not assigned yet'}</td>
+              <td>${subtask.deadline || 'No deadline'}</td>
+              <td>${subtask.reminderTime || '-'}</td>
+              <td>
+                <select class="status-select status-${subtask.status || 'not-started'}" onchange="updateTaskStatus('${taskId}', '${subtask.subtaskId}', this.value)">
+                  <option value="not-started" ${(subtask.status === 'not-started' || !subtask.status) ? 'selected' : ''}>Not started</option>
+                  <option value="in-progress" ${subtask.status === 'in-progress' ? 'selected' : ''}>In progress</option>
+                  <option value="completed" ${subtask.status === 'completed' ? 'selected' : ''}>Completed</option>
+                </select>
+              </td>
+              <td>
+                <button class="action-btn" onclick="editTask('${subtask.subtaskId}')">Edit</button>
+                <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtask.subtaskId}')">View All</button>
+              </td>
+            `;
+            
+            tbody.appendChild(subtaskRow);
+          });
+        });
+        
+        console.log('Tracking table initialized successfully');
+      } catch (error) {
+        console.error('Error initializing tracking table:', error);
+      }
+    }
+    
+    // Fonction pour initialiser l'onglet de suivi
+    function initializeTrackingTab() {
+      try {
+        console.log('Initializing tracking tab');
+        
+        // Initialiser le tableau de suivi
+        initializeTrackingTable();
+        
+        // Initialiser les filtres
+        const statusFilter = document.getElementById('status-filter');
+        const categoryFilter = document.getElementById('category-filter');
+        const myTasksFilter = document.getElementById('my-tasks-filter');
+        
+        if (statusFilter) statusFilter.value = 'all';
+        if (categoryFilter) categoryFilter.value = 'all';
+        if (myTasksFilter) myTasksFilter.checked = false;
+        
+        // Afficher le nom de l'utilisateur actuel
+        const currentUser = getCurrentUser();
+        const userDisplay = document.querySelector('.user-display');
+        if (userDisplay && currentUser) {
+          userDisplay.textContent = currentUser;
+        }
+        
+        console.log('Tracking tab initialized successfully');
+      } catch (error) {
+        console.error('Error initializing tracking tab:', error);
+      }
+    }
+    
+    // Fonction pour éditer une tâche
+    function editTask(taskId) {
+      try {
+        console.log('Editing task:', taskId);
+        
+        // Rechercher la tâche dans le localStorage
+        const tasks = getRegisteredTasks();
+        const task = tasks.find(t => t.taskId === taskId || t.subtaskId === taskId);
+        
+        if (!task) {
+          console.warn(`Task not found: ${taskId}`);
+          alert('Task not found');
+          return;
+        }
+        
+        // Pour l'instant, afficher simplement une alerte avec les détails de la tâche
+        alert(`
+          Task ID: ${task.taskId}
+          Subtask ID: ${task.subtaskId || 'N/A'}
+          Subtask Name: ${task.subtaskName || 'N/A'}
+          Assigned to: ${task.name}
+          Title/Role: ${task.title}
+          Deadline: ${task.deadline || 'None'}
+          Status: ${task.status || 'Not started'}
+          
+          Edit functionality will be implemented in a future version.
+        `);
+      } catch (error) {
+        console.error(`Error editing task ${taskId}:`, error);
+        alert('An error occurred while trying to edit the task');
+      }
+    }
+    
+    // Fonction pour afficher tous les assignés d'une tâche
+    function viewAssignees(taskId, subtaskId) {
+      try {
+        console.log('Viewing assignees for task:', taskId, 'subtask:', subtaskId);
+        
+        const assignees = getAllAssignedPeople(taskId, subtaskId);
+        
+        // Créer une fenêtre modale pour afficher les assignés
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        
+        modal.innerHTML = `
+          <div class="modal-content">
+            <h3>People assigned to this task</h3>
+            <div class="assignee-list">
+              ${assignees.length > 0 
+                ? assignees.map(name => `<p>${name}</p>`).join('')
+                : '<p>No one assigned to this task yet</p>'}
+            </div>
+            <button onclick="this.closest('.modal').remove()">Close</button>
+          </div>
+        `;
+        
+        document.body.appendChild(modal);
+      } catch (error) {
+        console.error(`Error viewing assignees for task ${taskId}, subtask ${subtaskId}:`, error);
+        alert('An error occurred while trying to view assignees');
+      }
     }
     
     // Fonction modifiée pour mettre à jour une tâche dans le tableau de suivi
     function updateTaskInTrackingTable(task) {
-      const taskId = task.taskId;
-      const subtaskId = task.subtaskId;
-      const status = task.status || 'not-started'; // Par défaut: Not started
-      
-      // Trouver la ligne de la tâche principale
-      let mainTaskRow = null;
-      const mainTaskRows = document.querySelectorAll('tr.main-task');
-      
-      for (let i = 0; i < mainTaskRows.length; i++) {
-        const row = mainTaskRows[i];
-        const taskCell = row.cells[0];
-        if (taskCell && taskCell.textContent.toLowerCase().includes(taskId.toLowerCase())) {
-          mainTaskRow = row;
-          break;
+      try {
+        console.log('Updating task in tracking table:', task);
+        
+        if (!task) {
+          console.error('No task provided to update');
+          return;
         }
-      }
-      
-      if (mainTaskRow) {
+        
+        const taskId = task.taskId;
+        const subtaskId = task.subtaskId;
+        const status = task.status || 'not-started'; // Par défaut: Not started
+        
+        // Trouver la ligne de la tâche principale
+        let mainTaskRow = null;
+        const mainTaskRows = document.querySelectorAll('tr.main-task');
+        
+        for (let i = 0; i < mainTaskRows.length; i++) {
+          const row = mainTaskRows[i];
+          const taskCell = row.cells[0];
+          if (taskCell && taskCell.textContent.toLowerCase().includes(taskId.toLowerCase())) {
+            mainTaskRow = row;
+            break;
+          }
+        }
+        
+        if (!mainTaskRow) {
+          console.warn(`Main task row not found for task: ${taskId}`);
+          return;
+        }
+        
         // Si pas de sous-tâche spécifique, mettre à jour la ligne de la tâche principale
         if (!subtaskId) {
           // Obtenir toutes les personnes assignées à cette tâche principale
@@ -627,110 +1061,140 @@
           // Trouver et mettre à jour la ligne de la sous-tâche spécifique
           const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
           
+          if (subtaskRows.length === 0) {
+            console.warn(`No subtask rows found for parent: ${taskId}`);
+            return;
+          }
+          
+          let subtaskRow = null;
           for (let i = 0; i < subtaskRows.length; i++) {
             const row = subtaskRows[i];
             const subtaskCell = row.cells[0];
             
             if (subtaskCell && subtaskCell.textContent.toLowerCase().includes(task.subtaskName.toLowerCase())) {
-              // Obtenir toutes les personnes assignées à cette micro-tâche
-              const assignedPeople = getAllAssignedPeople(taskId, subtaskId);
-              
-              // Mettre à jour la cellule avec toutes les personnes assignées
-              row.cells[2].textContent = assignedPeople.length > 0 ? assignedPeople.join(', ') : 'Not assigned yet';
-              
-              // Mettre à jour la date limite (utiliser la plus proche)
-              const deadlines = getRegisteredTasks()
-                .filter(t => t.taskId === taskId && t.subtaskId === subtaskId)
-                .map(t => t.deadline)
-                .filter(d => d);
-              
-              if (deadlines.length > 0) {
-                deadlines.sort();
-                row.cells[3].textContent = deadlines[0];
-              }
-              
-              // Mettre à jour l'heure si fournie
-              if (task.reminderTime) {
-                row.cells[4].textContent = task.reminderTime;
-              }
-              
-              // Mettre à jour le statut avec un sélecteur intégré
-              row.cells[5].innerHTML = `
-                <select class="status-select status-${status}" onchange="updateTaskStatus('${taskId}', '${subtaskId}', this.value)">
-                  <option value="not-started" ${status === 'not-started' ? 'selected' : ''}>Not started</option>
-                  <option value="in-progress" ${status === 'in-progress' ? 'selected' : ''}>In progress</option>
-                  <option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option>
-                </select>
-              `;
-              
-              // Mettre à jour les actions
-              row.cells[6].innerHTML = `
-                <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
-                <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
-              `;
-              
-              // Développer les sous-tâches pour afficher la tâche assignée
-              const expandBtn = mainTaskRow.querySelector('.expand-btn');
-              if (expandBtn && expandBtn.textContent === '+') {
-                expandBtn.click();
-              }
-              
+              subtaskRow = row;
               break;
             }
           }
+          
+          if (!subtaskRow) {
+            console.warn(`Subtask row not found for: ${task.subtaskName}`);
+            return;
+          }
+          
+          // Obtenir toutes les personnes assignées à cette micro-tâche
+          const assignedPeople = getAllAssignedPeople(taskId, subtaskId);
+          
+          // Mettre à jour la cellule avec toutes les personnes assignées
+          subtaskRow.cells[2].textContent = assignedPeople.length > 0 ? assignedPeople.join(', ') : 'Not assigned yet';
+          
+          // Mettre à jour la date limite (utiliser la plus proche)
+          const deadlines = getRegisteredTasks()
+            .filter(t => t.taskId === taskId && t.subtaskId === subtaskId)
+            .map(t => t.deadline)
+            .filter(d => d);
+          
+          if (deadlines.length > 0) {
+            deadlines.sort();
+            subtaskRow.cells[3].textContent = deadlines[0];
+          }
+          
+          // Mettre à jour l'heure si fournie
+          if (task.reminderTime) {
+            subtaskRow.cells[4].textContent = task.reminderTime;
+          }
+          
+          // Mettre à jour le statut avec un sélecteur intégré
+          subtaskRow.cells[5].innerHTML = `
+            <select class="status-select status-${status}" onchange="updateTaskStatus('${taskId}', '${subtaskId}', this.value)">
+              <option value="not-started" ${status === 'not-started' ? 'selected' : ''}>Not started</option>
+              <option value="in-progress" ${status === 'in-progress' ? 'selected' : ''}>In progress</option>
+              <option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option>
+            </select>
+          `;
+          
+          // Mettre à jour les actions
+          subtaskRow.cells[6].innerHTML = `
+            <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
+            <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
+          `;
+          
+          // Développer les sous-tâches pour afficher la tâche assignée
+          const expandBtn = mainTaskRow.querySelector('.expand-btn');
+          if (expandBtn && expandBtn.textContent === '+') {
+            expandBtn.click();
+          }
         }
+        
+        console.log('Task updated successfully in tracking table');
+      } catch (error) {
+        console.error('Error updating task in tracking table:', error);
       }
     }
     
     // Fonction pour mettre à jour le statut d'une tâche
     function updateTaskStatus(taskId, subtaskId, status) {
-      // Mettre à jour le statut dans le localStorage
-      let registeredTasks = getRegisteredTasks();
-      
-      if (subtaskId) {
-        // Mise à jour d'une sous-tâche
-        registeredTasks.forEach(task => {
-          if (task.taskId === taskId && task.subtaskId === subtaskId) {
-            task.status = status;
+      try {
+        console.log(`Updating task status - Task: ${taskId}, Subtask: ${subtaskId}, Status: ${status}`);
+        
+        // Mettre à jour le statut dans le localStorage
+        let registeredTasks = getRegisteredTasks();
+        let updated = false;
+        
+        if (subtaskId) {
+          // Mise à jour d'une sous-tâche
+          registeredTasks.forEach(task => {
+            if (task.taskId === taskId && task.subtaskId === subtaskId) {
+              task.status = status;
+              updated = true;
+            }
+          });
+        } else {
+          // Mise à jour d'une tâche principale
+          registeredTasks.forEach(task => {
+            if (task.taskId === taskId && (!task.subtaskId || task.subtaskId === '')) {
+              task.status = status;
+              updated = true;
+            }
+          });
+        }
+        
+        if (!updated) {
+          console.warn(`No task found to update status - Task: ${taskId}, Subtask: ${subtaskId}`);
+        }
+        
+        localStorage.setItem('registeredTasks', JSON.stringify(registeredTasks));
+        
+        // Trouver la ligne de tâche appropriée
+        let taskRow;
+        
+        if (!subtaskId) {
+          // Tâche principale
+          const mainTaskRows = document.querySelectorAll('tr.main-task');
+          for (let i = 0; i < mainTaskRows.length; i++) {
+            const row = mainTaskRows[i];
+            if (row.cells[0].textContent.toLowerCase().includes(taskId.toLowerCase())) {
+              taskRow = row;
+              break;
+            }
           }
-        });
-      } else {
-        // Mise à jour d'une tâche principale
-        registeredTasks.forEach(task => {
-          if (task.taskId === taskId && (!task.subtaskId || task.subtaskId === '')) {
-            task.status = status;
-          }
-        });
-      }
-      
-      localStorage.setItem('registeredTasks', JSON.stringify(registeredTasks));
-      
-      // Trouver la ligne de tâche appropriée
-      let taskRow;
-      
-      if (!subtaskId) {
-        // Tâche principale
-        const mainTaskRows = document.querySelectorAll('tr.main-task');
-        for (let i = 0; i < mainTaskRows.length; i++) {
-          const row = mainTaskRows[i];
-          if (row.cells[0].textContent.toLowerCase().includes(taskId.toLowerCase())) {
-            taskRow = row;
-            break;
+        } else {
+          // Sous-tâche
+          const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
+          for (let i = 0; i < subtaskRows.length; i++) {
+            const row = subtaskRows[i];
+            if (row.cells[0].textContent.toLowerCase().includes(subtaskId.toLowerCase())) {
+              taskRow = row;
+              break;
+            }
           }
         }
-      } else {
-        // Sous-tâche
-        const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
-        for (let i = 0; i < subtaskRows.length; i++) {
-          const row = subtaskRows[i];
-          if (row.cells[0].textContent.toLowerCase().includes(subtaskId.toLowerCase())) {
-            taskRow = row;
-            break;
-          }
+        
+        if (!taskRow) {
+          console.warn(`Task row not found for update - Task: ${taskId}, Subtask: ${subtaskId}`);
+          return;
         }
-      }
-      
-      if (taskRow) {
+        
         // Mettre à jour la classe du sélecteur pour changer sa couleur
         const statusSelect = taskRow.cells[5].querySelector('.status-select');
         if (statusSelect) {
@@ -795,10 +1259,109 @@
             }
           }
         }
+        
+        console.log('Task status updated successfully');
+      } catch (error) {
+        console.error(`Error updating task status - Task: ${taskId}, Subtask: ${subtaskId}:`, error);
       }
     }
     
-    // Le reste du code JavaScript reste identique
+    // Fonction pour gérer la soumission du formulaire d'inscription
+    function handleRegistrationSubmit() {
+      try {
+        console.log('Handling registration submission');
+        
+        // Vérifier les champs obligatoires
+        const name = document.getElementById('name').value;
+        const title = document.getElementById('class').value;
+        
+        if (!name || !title) {
+          const errorMessage = document.getElementById('error-message');
+          if (errorMessage) {
+            errorMessage.style.display = 'block';
+          }
+          console.warn('Required fields missing');
+          return;
+        }
+        
+        // Collecter les tâches sélectionnées
+        const selectedTasks = document.querySelectorAll('input[type="checkbox"].task-checkbox:checked');
+        
+        if (selectedTasks.length === 0) {
+          alert('Please select at least one task');
+          console.warn('No tasks selected');
+          return;
+        }
+        
+        // Collecter les données des tâches
+        const taskData = collectTaskData(selectedTasks);
+        
+        if (taskData.length === 0) {
+          alert('Error collecting task data');
+          console.error('Failed to collect task data');
+          return;
+        }
+        
+        // Sauvegarder les tâches
+        const success = saveTaskRegistration(taskData);
+        
+        if (success) {
+          alert('Tasks registered successfully!');
+          
+          // Réinitialiser le formulaire
+          document.querySelectorAll('input[type="checkbox"].task-checkbox:checked').forEach(checkbox => {
+            checkbox.checked = false;
+          });
+          
+          // Masquer les détails des tâches
+          document.querySelectorAll('.task-details').forEach(details => {
+            details.style.display = 'none';
+          });
+          
+          // Masquer le message d'erreur
+          const errorMessage = document.getElementById('error-message');
+          if (errorMessage) {
+            errorMessage.style.display = 'none';
+          }
+          
+          // Mettre à jour l'onglet de suivi
+          const trackingTab = document.querySelector('.tablinks[onclick*="tracking"]');
+          if (trackingTab) {
+            trackingTab.click();
+          }
+        } else {
+          alert('Error saving task registration');
+        }
+      } catch (error) {
+        console.error('Error handling registration submission:', error);
+        alert('An error occurred while submitting the registration');
+      }
+    }
+    
+    // Ajouter des écouteurs d'événements
+    document.addEventListener('DOMContentLoaded', function() {
+      try {
+        console.log('DOM content loaded, initializing...');
+        
+        // Initialiser l'écouteur pour le bouton de soumission
+        const submitButton = document.getElementById('submit-registration');
+        if (submitButton) {
+          submitButton.addEventListener('click', handleRegistrationSubmit);
+        }
+        
+        // Ouvrir l'onglet par défaut au chargement
+        const firstTab = document.querySelector('.tablinks');
+        if (firstTab) {
+          firstTab.click();
+        } else {
+          console.warn('No tab buttons found');
+        }
+        
+        console.log('Initialization complete');
+      } catch (error) {
+        console.error('Error during initialization:', error);
+      }
+    });
   </script>
 </body>
-</html> 
+</html>
