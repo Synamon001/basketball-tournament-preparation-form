@@ -1,3 +1,190 @@
+<body>
+  <h1>Micro-Task Registration and Tracking - Basketball Tournament and Game Fair</h1>
+  
+  <!-- Informations sur l'événement -->
+  <div class="event-info">
+    <p>Date de l'événement: [Date]</p>
+    <p>Lieu: [Lieu]</p>
+    <p>Organisateur: [Organisateur]</p>
+  </div>
+  
+  <!-- Contrôles utilisateur -->
+  <div class="user-controls">
+    <span id="current-user-display" class="user-display"></span>
+    <button onclick="changeUser()">Changer d'utilisateur</button>
+  </div>
+  
+  <!-- Conteneur d'onglets -->
+  <div class="tab-container">
+    <div class="tab">
+      <button class="tablinks active" onclick="openTab(event, 'registration')">Inscription aux tâches</button>
+      <button class="tablinks" onclick="openTab(event, 'tracking')">Suivi des tâches</button>
+    </div>
+    
+    <!-- Onglet d'inscription -->
+    <div id="registration" class="tabcontent" style="display: block;">
+      <h2>Inscription aux micro-tâches</h2>
+      
+      <div class="form-section">
+        <h3>Informations personnelles</h3>
+        <label for="name">Nom et prénom <span class="required-label">*</span></label>
+        <input type="text" id="name" required>
+        
+        <label for="class">Titre/Fonction <span class="required-label">*</span></label>
+        <input type="text" id="class" required>
+      </div>
+      
+      <!-- Ajoutez ici vos groupes de tâches -->
+      <div class="task-group">
+        <!-- Exemple de tâche -->
+        <div class="checkbox-container">
+          <input type="checkbox" id="task1" class="task-checkbox" value="task1">
+          <label for="task1">Tâche 1</label>
+        </div>
+        <div class="task-details">
+          <!-- Détails de la tâche -->
+        </div>
+      </div>
+      
+      <button id="register-btn" class="submit-btn">S'inscrire aux tâches sélectionnées</button>
+      <div id="error-message" class="error-message"></div>
+    </div>
+    
+    <!-- Onglet de suivi -->
+    <div id="tracking" class="tabcontent">
+      <h2>Suivi des tâches</h2>
+      
+      <!-- Filtres et recherche -->
+      <div class="search-box">
+        <input type="text" id="task-search" placeholder="Rechercher des tâches..." onkeyup="searchTasks()">
+      </div>
+      
+      <div class="filter-options">
+        <select id="status-filter" onchange="filterTasks()">
+          <option value="all">Tous les statuts</option>
+          <option value="not-started">Non commencé</option>
+          <option value="in-progress">En cours</option>
+          <option value="completed">Terminé</option>
+        </select>
+        
+        <select id="category-filter" onchange="filterTasks()">
+          <option value="all">Toutes les catégories</option>
+          <!-- Options de catégorie -->
+        </select>
+        
+        <div class="checkbox-container">
+          <input type="checkbox" id="my-tasks-filter" onchange="filterTasks()">
+          <label for="my-tasks-filter">Mes tâches uniquement</label>
+        </div>
+      </div>
+      
+      <!-- Tableau de suivi -->
+      <table id="tracking-table">
+        <thead>
+          <tr>
+            <th>Tâche</th>
+            <th>Catégorie</th>
+            <th>Assigné à</th>
+            <th>Date limite</th>
+            <th>Heure</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Les lignes du tableau seront générées dynamiquement -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <script>
+    // Initialiser l'utilisateur actuel
+    document.addEventListener('DOMContentLoaded', function() {
+      const currentUser = getCurrentUser();
+      if (currentUser) {
+        const userDisplay = document.getElementById('current-user-display');
+        if (userDisplay) {
+          userDisplay.textContent = `Utilisateur: ${currentUser}`;
+        }
+      }
+      
+      // Ouvrir l'onglet d'inscription par défaut
+      document.getElementById('registration').style.display = 'block';
+      
+      // Configurer le gestionnaire d'événements pour le bouton d'inscription
+      const registerBtn = document.getElementById('register-btn');
+      if (registerBtn) {
+        registerBtn.addEventListener('click', function() {
+          // Collecter les tâches sélectionnées
+          const selectedTasks = Array.from(document.querySelectorAll('.task-checkbox:checked'));
+          
+          if (selectedTasks.length === 0) {
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.textContent = 'Veuillez sélectionner au moins une tâche.';
+            errorMessage.style.display = 'block';
+            return;
+          }
+          
+          // Collecter les données des tâches
+          const taskData = collectTaskData(selectedTasks);
+          
+          // Enregistrer les tâches
+          saveTaskRegistration(taskData);
+          
+          // Rediriger vers l'onglet de suivi
+          document.querySelector('.tablinks:nth-child(2)').click();
+        });
+      }
+    });
+    
+    // Fonction pour changer d'utilisateur
+    function changeUser() {
+      localStorage.removeItem('currentUser');
+      const newUser = getCurrentUser();
+      if (newUser) {
+        const userDisplay = document.getElementById('current-user-display');
+        if (userDisplay) {
+          userDisplay.textContent = `Utilisateur: ${newUser}`;
+        }
+        
+        // Actualiser les filtres
+        filterTasks();
+      }
+    }
+    
+    // Fonction pour initialiser l'onglet de suivi
+    function initializeTrackingTable() {
+      const trackingTable = document.getElementById('tracking-table').getElementsByTagName('tbody')[0];
+      trackingTable.innerHTML = ''; // Effacer le contenu existant
+      
+      // Ajouter les tâches enregistrées
+      const registeredTasks = getRegisteredTasks();
+      // Code pour remplir le tableau...
+    }
+    
+    // Initialiser l'onglet de suivi
+    function initializeTrackingTab() {
+      initializeTrackingTable();
+      filterTasks(); // Appliquer les filtres initiaux
+    }
+  </script>
+</body>
+
+Pour résoudre le problème :
+
+    Ajoutez le contenu HTML manquant dans la section <body> de votre document.
+    Assurez-vous que tous les éléments HTML référencés dans votre JavaScript existent réellement dans le DOM.
+    Vérifiez que vos fonctions JavaScript sont correctement appelées (par exemple, assurez-vous que initializeTrackingTab() est appelée lorsque l'onglet de suivi est ouvert).
+    Ajoutez un écouteur d'événement DOMContentLoaded pour initialiser votre application une fois que le DOM est chargé.
+
+Si vous avez le code HTML complet qui était censé être inclus, vous devriez le réintégrer à la place du commentaire <!-- Le reste du code HTML reste identique, je l'omets pour la clarté -->.
+Merci. Réécris le code en apportant ces corrections.
+MonicaSonnet
+
+Voici le code HTML complet corrigé pour votre application de micro-tâches. J'ai ajouté le contenu HTML manquant dans la section <body> et vérifié que tous les éléments référencés dans le JavaScript existent bien :
+
+Copier
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -378,7 +565,223 @@
   </style>
 </head>
 <body>
-  <!-- Le reste du code HTML reste identique, je l'omets pour la clarté -->
+  <h1>Micro-Task Registration and Tracking - Basketball Tournament and Game Fair</h1>
+  
+  <!-- Informations sur l'événement -->
+  <div class="event-info">
+    <p><strong>Date de l'événement:</strong> 15 avril 2026</p>
+    <p><strong>Lieu:</strong> Gymnase Municipal</p>
+    <p><strong>Organisateur:</strong> Association Sportive Locale</p>
+  </div>
+  
+  <!-- Contrôles utilisateur -->
+  <div class="user-controls">
+    <span id="current-user-display" class="user-display"></span>
+    <button onclick="changeUser()">Changer d'utilisateur</button>
+  </div>
+  
+  <!-- Conteneur d'onglets -->
+  <div class="tab-container">
+    <div class="tab">
+      <button class="tablinks active" onclick="openTab(event, 'registration')">Inscription aux tâches</button>
+      <button class="tablinks" onclick="openTab(event, 'tracking')">Suivi des tâches</button>
+    </div>
+    
+    <!-- Onglet d'inscription -->
+    <div id="registration" class="tabcontent" style="display: block;">
+      <h2>Inscription aux micro-tâches</h2>
+      
+      <div class="form-section">
+        <h3>Informations personnelles</h3>
+        <label for="name">Nom et prénom <span class="required-label">*</span></label>
+        <input type="text" id="name" required>
+        
+        <label for="class">Titre/Fonction <span class="required-label">*</span></label>
+        <input type="text" id="class" required>
+      </div>
+      
+      <!-- Groupes de tâches -->
+      <div class="category-header">Préparation de l'événement</div>
+      
+      <div class="task-group">
+        <div class="checkbox-container">
+          <input type="checkbox" id="task1" class="task-checkbox" value="task1">
+          <label for="task1">Préparation du gymnase</label>
+        </div>
+        <div class="task-details" id="task1-details">
+          <p>Installation des équipements sportifs et préparation des espaces de jeu.</p>
+          <label for="task1-subtask">Sous-tâche spécifique:</label>
+          <select id="task1-subtask">
+            <option value="">-- Sélectionnez une sous-tâche --</option>
+            <option value="subtask1-1">Installation des paniers de basket</option>
+            <option value="subtask1-2">Marquage au sol</option>
+            <option value="subtask1-3">Préparation des vestiaires</option>
+          </select>
+          
+          <label for="task1-deadline">Date limite:</label>
+          <input type="date" id="task1-deadline">
+          
+          <label for="task1-reminder-date">Date de rappel:</label>
+          <input type="date" id="task1-reminder-date">
+          
+          <label for="task1-reminder-time">Heure de rappel:</label>
+          <input type="time" id="task1-reminder-time">
+          
+          <label for="task1-notes">Notes:</label>
+          <textarea id="task1-notes" rows="3"></textarea>
+        </div>
+      </div>
+      
+      <div class="task-group">
+        <div class="checkbox-container">
+          <input type="checkbox" id="task2" class="task-checkbox" value="task2">
+          <label for="task2">Gestion des inscriptions</label>
+        </div>
+        <div class="task-details" id="task2-details">
+          <p>Gestion des inscriptions des équipes et des participants.</p>
+          <label for="task2-subtask">Sous-tâche spécifique:</label>
+          <select id="task2-subtask">
+            <option value="">-- Sélectionnez une sous-tâche --</option>
+            <option value="subtask2-1">Enregistrement des équipes</option>
+            <option value="subtask2-2">Vérification des licences</option>
+            <option value="subtask2-3">Préparation des badges</option>
+          </select>
+          
+          <label for="task2-deadline">Date limite:</label>
+          <input type="date" id="task2-deadline">
+          
+          <label for="task2-reminder-date">Date de rappel:</label>
+          <input type="date" id="task2-reminder-date">
+          
+          <label for="task2-reminder-time">Heure de rappel:</label>
+          <input type="time" id="task2-reminder-time">
+          
+          <label for="task2-notes">Notes:</label>
+          <textarea id="task2-notes" rows="3"></textarea>
+        </div>
+      </div>
+      
+      <div class="category-header">Jour de l'événement</div>
+      
+      <div class="task-group">
+        <div class="checkbox-container">
+          <input type="checkbox" id="task3" class="task-checkbox" value="task3">
+          <label for="task3">Arbitrage <span class="skill-tag">Compétence requise</span></label>
+        </div>
+        <div class="task-details" id="task3-details">
+          <p>Arbitrage des matchs de basket.</p>
+          <label for="task3-subtask">Sous-tâche spécifique:</label>
+          <select id="task3-subtask">
+            <option value="">-- Sélectionnez une sous-tâche --</option>
+            <option value="subtask3-1">Arbitrage terrain 1</option>
+            <option value="subtask3-2">Arbitrage terrain 2</option>
+            <option value="subtask3-3">Table de marque</option>
+          </select>
+          
+          <label for="task3-deadline">Date limite:</label>
+          <input type="date" id="task3-deadline">
+          
+          <label for="task3-reminder-date">Date de rappel:</label>
+          <input type="date" id="task3-reminder-date">
+          
+          <label for="task3-reminder-time">Heure de rappel:</label>
+          <input type="time" id="task3-reminder-time">
+          
+          <label for="task3-notes">Notes:</label>
+          <textarea id="task3-notes" rows="3"></textarea>
+        </div>
+      </div>
+      
+      <div class="task-group">
+        <div class="checkbox-container">
+          <input type="checkbox" id="task4" class="task-checkbox" value="task4">
+          <label for="task4">Buvette et restauration <span class="priority-high">Priorité haute</span></label>
+        </div>
+        <div class="task-details" id="task4-details">
+          <p>Gestion de la buvette et de la restauration pendant l'événement.</p>
+          <label for="task4-subtask">Sous-tâche spécifique:</label>
+          <select id="task4-subtask">
+            <option value="">-- Sélectionnez une sous-tâche --</option>
+            <option value="subtask4-1">Service boissons</option>
+            <option value="subtask4-2">Préparation sandwichs</option>
+            <option value="subtask4-3">Caisse</option>
+          </select>
+          
+          <label for="task4-deadline">Date limite:</label>
+          <input type="date" id="task4-deadline">
+          
+          <label for="task4-reminder-date">Date de rappel:</label>
+          <input type="date" id="task4-reminder-date">
+          
+          <label for="task4-reminder-time">Heure de rappel:</label>
+          <input type="time" id="task4-reminder-time">
+          
+          <label for="task4-notes">Notes:</label>
+          <textarea id="task4-notes" rows="3"></textarea>
+        </div>
+      </div>
+      
+      <button id="register-btn" class="submit-btn">S'inscrire aux tâches sélectionnées</button>
+      <div id="error-message" class="error-message"></div>
+    </div>
+    
+    <!-- Onglet de suivi -->
+    <div id="tracking" class="tabcontent">
+      <h2>Suivi des tâches</h2>
+      
+      <!-- Filtres et recherche -->
+      <div class="search-box">
+        <input type="text" id="task-search" placeholder="Rechercher des tâches..." onkeyup="searchTasks()">
+      </div>
+      
+      <div class="filter-options">
+        <select id="status-filter" onchange="filterTasks()">
+          <option value="all">Tous les statuts</option>
+          <option value="not-started">Non commencé</option>
+          <option value="in-progress">En cours</option>
+          <option value="completed">Terminé</option>
+        </select>
+        
+        <select id="category-filter" onchange="filterTasks()">
+          <option value="all">Toutes les catégories</option>
+          <option value="preparation">Préparation de l'événement</option>
+          <option value="event-day">Jour de l'événement</option>
+        </select>
+        
+        <div class="checkbox-container">
+          <input type="checkbox" id="my-tasks-filter" onchange="filterTasks()">
+          <label for="my-tasks-filter">Mes tâches uniquement</label>
+        </div>
+      </div>
+      
+      <!-- Tableau de suivi -->
+      <table id="tracking-table">
+        <thead>
+          <tr>
+            <th>Tâche</th>
+            <th>Catégorie</th>
+            <th>Assigné à</th>
+            <th>Date limite</th>
+            <th>Heure</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Les lignes du tableau seront générées dynamiquement -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- Modal pour afficher les assignés -->
+  <div id="assignees-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <h3>Personnes assignées à cette tâche</h3>
+      <div id="assignee-list" class="assignee-list"></div>
+      <button onclick="closeModal()" style="margin-top: 15px;">Fermer</button>
+    </div>
+  </div>
   
   <script>
     // Fonction pour obtenir l'utilisateur actuel
@@ -571,7 +974,7 @@
       return names;
     }
     
-    // Fonction modifiée pour mettre à jour une tâche dans le tableau de suivi
+    // Fonction pour mettre à jour une tâche dans le tableau de suivi
     function updateTaskInTrackingTable(task) {
       const taskId = task.taskId;
       const subtaskId = task.subtaskId;
@@ -798,7 +1201,227 @@
       }
     }
     
-    // Le reste du code JavaScript reste identique
+    // Fonction pour éditer une tâche
+    function editTask(taskId) {
+      alert("Fonctionnalité d'édition à implémenter pour la tâche: " + taskId);
+      // Implémentation à venir
+    }
+    
+    // Fonction pour afficher les personnes assignées à une tâche
+    function viewAssignees(taskId, subtaskId) {
+      const assignees = getAllAssignedPeople(taskId, subtaskId);
+      const assigneeList = document.getElementById('assignee-list');
+      
+      assigneeList.innerHTML = '';
+      
+      if (assignees.length > 0) {
+        const ul = document.createElement('ul');
+        assignees.forEach(name => {
+          const li = document.createElement('li');
+          li.textContent = name;
+          ul.appendChild(li);
+        });
+        assigneeList.appendChild(ul);
+      } else {
+        assigneeList.textContent = 'Aucune personne assignée à cette tâche.';
+      }
+      
+      document.getElementById('assignees-modal').style.display = 'flex';
+    }
+    
+    // Fonction pour fermer la modal
+    function closeModal() {
+      document.getElementById('assignees-modal').style.display = 'none';
+    }
+    
+    // Fonction pour changer d'utilisateur
+    function changeUser() {
+      localStorage.removeItem('currentUser');
+      const newUser = getCurrentUser();
+      if (newUser) {
+        const userDisplay = document.getElementById('current-user-display');
+        if (userDisplay) {
+          userDisplay.textContent = `Utilisateur: ${newUser}`;
+        }
+        
+        // Actualiser les filtres
+        filterTasks();
+      }
+    }
+    
+    // Fonction pour initialiser le tableau de suivi
+    function initializeTrackingTable() {
+      const trackingTable = document.getElementById('tracking-table').getElementsByTagName('tbody')[0];
+      trackingTable.innerHTML = ''; // Effacer le contenu existant
+      
+      // Définir les catégories de tâches
+      const taskCategories = {
+        'task1': { name: 'Préparation du gymnase', category: 'Préparation de l\'événement', subtasks: {
+          'subtask1-1': 'Installation des paniers de basket',
+          'subtask1-2': 'Marquage au sol',
+          'subtask1-3': 'Préparation des vestiaires'
+        }},
+        'task2': { name: 'Gestion des inscriptions', category: 'Préparation de l\'événement', subtasks: {
+          'subtask2-1': 'Enregistrement des équipes',
+          'subtask2-2': 'Vérification des licences',
+          'subtask2-3': 'Préparation des badges'
+        }},
+        'task3': { name: 'Arbitrage', category: 'Jour de l\'événement', subtasks: {
+          'subtask3-1': 'Arbitrage terrain 1',
+          'subtask3-2': 'Arbitrage terrain 2',
+          'subtask3-3': 'Table de marque'
+        }},
+        'task4': { name: 'Buvette et restauration', category: 'Jour de l\'événement', subtasks: {
+          'subtask4-1': 'Service boissons',
+          'subtask4-2': 'Préparation sandwichs',
+          'subtask4-3': 'Caisse'
+        }}
+      };
+      
+      // Ajouter les tâches principales et leurs sous-tâches
+      for (const taskId in taskCategories) {
+        const taskInfo = taskCategories[taskId];
+        
+        // Ajouter la ligne de la tâche principale
+        const mainTaskRow = trackingTable.insertRow();
+        mainTaskRow.className = 'main-task';
+        
+        // Cellule de nom de tâche avec bouton d'expansion
+        const taskNameCell = mainTaskRow.insertCell(0);
+        taskNameCell.innerHTML = `<button class="expand-btn" onclick="toggleSubtasks('${taskId}')">+</button> ${taskInfo.name}`;
+        
+        // Autres cellules
+        mainTaskRow.insertCell(1).textContent = taskInfo.category;
+        
+        // Obtenir les personnes assignées à cette tâche principale
+        const assignedPeople = getAllAssignedPeople(taskId, '');
+        mainTaskRow.insertCell(2).textContent = assignedPeople.length > 0 ? assignedPeople.join(', ') : 'Not assigned yet';
+        
+        // Date limite et heure
+        mainTaskRow.insertCell(3).textContent = '';
+        mainTaskRow.insertCell(4).textContent = '';
+        
+        // Statut par défaut
+        const statusCell = mainTaskRow.insertCell(5);
+        statusCell.innerHTML = `
+          <select class="status-select status-not-started" onchange="updateTaskStatus('${taskId}', '', this.value)">
+            <option value="not-started" selected>Not started</option>
+            <option value="in-progress">In progress</option>
+            <option value="completed">Completed</option>
+          </select>
+        `;
+        
+        // Actions
+        const actionsCell = mainTaskRow.insertCell(6);
+        actionsCell.innerHTML = `<button class="action-btn" onclick="editTask('${taskId}')">Edit</button>`;
+        
+        // Ajouter les sous-tâches
+        for (const subtaskId in taskInfo.subtasks) {
+          const subtaskName = taskInfo.subtasks[subtaskId];
+          
+          const subtaskRow = trackingTable.insertRow();
+          subtaskRow.className = 'subtask-row hidden';
+          subtaskRow.setAttribute('data-parent', taskId);
+          
+          // Cellules de la sous-tâche
+          subtaskRow.insertCell(0).textContent = subtaskName;
+          subtaskRow.insertCell(1).textContent = taskInfo.category;
+          
+          // Obtenir les personnes assignées à cette sous-tâche
+          const subtaskAssignees = getAllAssignedPeople(taskId, subtaskId);
+          subtaskRow.insertCell(2).textContent = subtaskAssignees.length > 0 ? subtaskAssignees.join(', ') : 'Not assigned yet';
+          
+          // Date limite et heure
+          subtaskRow.insertCell(3).textContent = '';
+          subtaskRow.insertCell(4).textContent = '';
+          
+          // Statut par défaut
+          const subtaskStatusCell = subtaskRow.insertCell(5);
+          subtaskStatusCell.innerHTML = `
+            <select class="status-select status-not-started" onchange="updateTaskStatus('${taskId}', '${subtaskId}', this.value)">
+              <option value="not-started" selected>Not started</option>
+              <option value="in-progress">In progress</option>
+              <option value="completed">Completed</option>
+            </select>
+          `;
+          
+          // Actions
+          const subtaskActionsCell = subtaskRow.insertCell(6);
+          subtaskActionsCell.innerHTML = `
+            <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
+            <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
+          `;
+        }
+      }
+      
+      // Mettre à jour les statuts des tâches enregistrées
+      const registeredTasks = getRegisteredTasks();
+      registeredTasks.forEach(task => {
+        updateTaskInTrackingTable(task);
+      });
+    }
+    
+    // Initialiser l'onglet de suivi
+    function initializeTrackingTab() {
+      initializeTrackingTable();
+      filterTasks(); // Appliquer les filtres initiaux
+    }
+    
+    // Initialiser l'application
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialiser l'utilisateur actuel
+      const currentUser = getCurrentUser();
+      if (currentUser) {
+        const userDisplay = document.getElementById('current-user-display');
+        if (userDisplay) {
+          userDisplay.textContent = `Utilisateur: ${currentUser}`;
+        }
+      }
+      
+      // Configurer le gestionnaire d'événements pour le bouton d'inscription
+      const registerBtn = document.getElementById('register-btn');
+      if (registerBtn) {
+        registerBtn.addEventListener('click', function() {
+          const name = document.getElementById('name').value;
+          const title = document.getElementById('class').value;
+          
+          // Validation des champs obligatoires
+          if (!name || !title) {
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.textContent = 'Veuillez remplir tous les champs obligatoires.';
+            errorMessage.style.display = 'block';
+            return;
+          }
+          
+          // Collecter les tâches sélectionnées
+          const selectedTasks = Array.from(document.querySelectorAll('.task-checkbox:checked'));
+          
+          if (selectedTasks.length === 0) {
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.textContent = 'Veuillez sélectionner au moins une tâche.';
+            errorMessage.style.display = 'block';
+            return;
+          }
+          
+          // Collecter les données des tâches
+          const taskData = collectTaskData(selectedTasks);
+          
+          // Enregistrer les tâches
+          saveTaskRegistration(taskData);
+          
+          // Afficher un message de confirmation
+          alert('Inscription aux tâches réussie !');
+          
+          // Réinitialiser le formulaire
+          document.querySelectorAll('.task-checkbox:checked').forEach(checkbox => {
+            checkbox.checked = false;
+          });
+          
+          // Rediriger vers l'onglet de suivi
+          document.querySelector('.tablinks:nth-child(2)').click();
+        });
+      }
+    });
   </script>
 </body>
 </html>
