@@ -321,7 +321,7 @@
       border-radius: 3px;
       border: 1px solid #ddd;
       background-color: transparent;
-      width: 100%;
+      width: 120px; /* Increased width for better visibility */
       font-size: 12px;
       font-weight: bold;
       cursor: pointer;
@@ -406,10 +406,16 @@
       justify-content: center;
       gap: 10px;
     }
+    
+    /* Make the Status column wider */
+    #tracking-table th:nth-child(6), 
+    #tracking-table td:nth-child(6) {
+      min-width: 120px;
+    }
   </style>
 </head>
 <body>
-  <h1>BASKETBALL TOURNAMENT STAFF SIGN UP FORM</h1>
+  <h1>BASKETBALL TOURNAMENT TASKS SIGN UP FORM</h1>
   
   <!-- User Controls -->
   <div class="user-controls">
@@ -440,9 +446,12 @@
       </div>
       
       <div class="form-section">
-        <h3>Personal Information</h3>
+        <h3>Information</h3>
         <label for="name">First Name or Nickname <span class="required-label">*</span></label>
         <input type="text" id="name" required>
+        
+        <label for="title">Title (student, teacher, etc) <span class="required-label">*</span></label>
+        <input type="text" id="title" required>
       </div>
       
       <!-- Task Categories -->
@@ -759,6 +768,18 @@
       return currentUser;
     }
     
+    // Function to get current user's title
+    function getUserTitle() {
+      let userTitle = localStorage.getItem('userTitle');
+      return userTitle || '';
+    }
+    
+    // Function to check if user is a teacher
+    function isTeacher() {
+      const userTitle = getUserTitle().toLowerCase();
+      return userTitle.includes('teacher') || userTitle.includes('prof') || userTitle.includes('enseignant');
+    }
+    
     // Tab functionality
     function openTab(evt, tabName) {
       var i, tabcontent, tablinks;
@@ -788,6 +809,7 @@
     function resetRegistrationForm() {
       // Clear name field
       document.getElementById('name').value = '';
+      document.getElementById('title').value = '';
       
       // Uncheck all task checkboxes
       document.querySelectorAll('.task-checkbox').forEach(checkbox => {
@@ -901,6 +923,7 @@
     function collectTaskData(selectedTasks) {
       const taskData = [];
       const name = document.getElementById('name').value;
+      const title = document.getElementById('title').value;
       
       selectedTasks.forEach(taskCheckbox => {
         const taskId = taskCheckbox.value;
@@ -935,6 +958,7 @@
           subtaskId: subtaskId,
           subtaskName: subtaskName,
           name: name,
+          title: title,
           deadline: deadline,
           reminderDate: reminderDate,
           reminderTime: reminderTime,
@@ -949,12 +973,17 @@
     // Function to validate task registration
     function validateTaskRegistration() {
       const name = document.getElementById('name').value.trim();
+      const title = document.getElementById('title').value.trim();
       const selectedTasks = Array.from(document.querySelectorAll('.task-checkbox:checked'));
       
       const errors = [];
       
       if (!name) {
         errors.push("First Name or Nickname is required");
+      }
+      
+      if (!title) {
+        errors.push("Title (student, teacher, etc) is required");
       }
       
       if (selectedTasks.length === 0) {
@@ -984,6 +1013,11 @@
       registeredTasks = registeredTasks.concat(taskData);
       
       localStorage.setItem('registeredTasks', JSON.stringify(registeredTasks));
+      
+      // Also save the user's title
+      if (taskData.length > 0 && taskData[0].title) {
+        localStorage.setItem('userTitle', taskData[0].title);
+      }
     }
     
     // Function to get all people assigned to a specific task/subtask
@@ -1121,13 +1155,41 @@
       // Get all registered tasks
       let registeredTasks = getRegisteredTasks();
       
-      // Filter out the task for the current user
-      registeredTasks = registeredTasks.filter(task => {
-        if (task.taskId === taskId && task.subtaskId === subtaskId) {
-          return task.name !== currentUser;
+      // Check if user is a teacher (can remove any task) or only their own
+      if (isTeacher()) {
+        // For teachers, ask which user's task to remove
+        const assignedUsers = getAllAssignedPeople(taskId, subtaskId);
+        if (assignedUsers.length > 0) {
+          const userToRemove = prompt("As a teacher, you can remove any user's task. Enter the name of the user whose task you want to remove, or leave blank to remove all:", "");
+          
+          if (userToRemove === null) {
+            // User cancelled
+            return;
+          } else if (userToRemove === "") {
+            // Remove all assignments for this task
+            registeredTasks = registeredTasks.filter(task => !(task.taskId === taskId && task.subtaskId === subtaskId));
+          } else {
+            // Remove only the specified user's assignment
+            registeredTasks = registeredTasks.filter(task => {
+              if (task.taskId === taskId && task.subtaskId === subtaskId) {
+                return task.name !== userToRemove;
+              }
+              return true;
+            });
+          }
+        } else {
+          alert("No users are assigned to this task.");
+          return;
         }
-        return true;
-      });
+      } else {
+        // For regular users, only remove their own tasks
+        registeredTasks = registeredTasks.filter(task => {
+          if (task.taskId === taskId && task.subtaskId === subtaskId) {
+            return task.name !== currentUser;
+          }
+          return true;
+        });
+      }
       
       // Save updated tasks
       localStorage.setItem('registeredTasks', JSON.stringify(registeredTasks));
@@ -1136,7 +1198,7 @@
       initializeTrackingTable();
       
       // Show confirmation
-      alert("Your task assignment has been removed.");
+      alert("Task assignment has been removed.");
     }
     
     // Function to update task status
@@ -1150,29 +1212,55 @@
       // Update status in localStorage
       let registeredTasks = getRegisteredTasks();
       let userHasTask = false;
+      let userIsTeacher = isTeacher();
       
-      if (subtaskId) {
-        // Update a subtask
+      if (userIsTeacher) {
+        // Teachers can update any task
+        userHasTask = true;
+        
+        // Ask which user's task to update
+        const assignedUsers = getAllAssignedPeople(taskId, subtaskId);
+        if (assignedUsers.length > 0) {
+          const userToUpdate = prompt("As a teacher, you can update any user's task status. Enter the name of the user whose task you want to update, or leave blank to update all:", "");
+          
+          if (userToUpdate === null) {
+            // User cancelled
+            initializeTrackingTable(); // Refresh to revert the change
+            return;
+          } else if (userToUpdate === "") {
+            // Update all assignments for this task
+            registeredTasks.forEach(task => {
+              if (task.taskId === taskId && task.subtaskId === subtaskId) {
+                task.status = status;
+              }
+            });
+          } else {
+            // Update only the specified user's assignment
+            registeredTasks.forEach(task => {
+              if (task.taskId === taskId && task.subtaskId === subtaskId && task.name === userToUpdate) {
+                task.status = status;
+              }
+            });
+          }
+        } else {
+          alert("No users are assigned to this task.");
+          initializeTrackingTable(); // Refresh to revert the change
+          return;
+        }
+      } else {
+        // Regular users can only update their own tasks
         registeredTasks.forEach(task => {
           if (task.taskId === taskId && task.subtaskId === subtaskId && task.name === currentUser) {
             task.status = status;
             userHasTask = true;
           }
         });
-      } else {
-        // Update a main task
-        registeredTasks.forEach(task => {
-          if (task.taskId === taskId && (!task.subtaskId || task.subtaskId === '') && task.name === currentUser) {
-            task.status = status;
-            userHasTask = true;
-          }
-        });
-      }
-      
-      if (!userHasTask) {
-        alert("You can only update the status of tasks assigned to you.");
-        initializeTrackingTable(); // Refresh to revert the change
-        return;
+        
+        if (!userHasTask) {
+          alert("You can only update the status of tasks assigned to you.");
+          initializeTrackingTable(); // Refresh to revert the change
+          return;
+        }
       }
       
       localStorage.setItem('registeredTasks', JSON.stringify(registeredTasks));
@@ -1320,6 +1408,7 @@
     // Function to change user
     function changeUser() {
       localStorage.removeItem('currentUser');
+      localStorage.removeItem('userTitle');
       const newUser = getCurrentUser();
       if (newUser) {
         const userDisplay = document.getElementById('current-user-display');
@@ -1472,8 +1561,8 @@
           // Deadline and time
           subtaskRow.insertCell(3).textContent = '';
           subtaskRow.insertCell(4).textContent = '';
-          
-          // Default status
+
+        // Default status
           const subtaskStatusCell = subtaskRow.insertCell(5);
           subtaskStatusCell.innerHTML = `
             <select class="status-select status-not-started" onchange="updateTaskStatus('${taskId}', '${subtaskId}', this.value)">
