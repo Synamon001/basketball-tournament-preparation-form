@@ -10,7 +10,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
   <!-- Firebase Storage (for potential attachments) -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
-
+  
   <script>
     // Firebase configuration (replace with your own credentials)
     const firebaseConfig = {
@@ -93,7 +93,6 @@
     input[type="date"],
     input[type="time"],
     input[type="email"],
-    input[type="password"],
     select,
     textarea {
       width: 100%;
@@ -591,40 +590,6 @@
       from { transform: translateX(100%); }
       to { transform: translateX(0); }
     }
-
-    /* Styles for urgent tasks */
-    .priority-task {
-      background-color: #ffebee !important;
-    }
-
-    /* Styles for advanced filters */
-    .advanced-filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 15px;
-      margin-bottom: 15px;
-      padding: 10px;
-      background-color: #f5f5f5;
-      border-radius: 5px;
-    }
-
-    .filter-group {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .filter-group label {
-      margin-bottom: 5px;
-      font-weight: bold;
-      font-size: 12px;
-    }
-
-    .filter-group select,
-    .filter-group input {
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
   </style>
 </head>
 <body>
@@ -634,7 +599,7 @@
   <!-- User Controls -->
   <div class="user-controls">
     <span id="current-user-display" class="user-display"></span>
-    <button onclick="logout()">Logout</button>
+    <button onclick="logout()">Change User</button>
   </div>
   
   <!-- Event Information -->
@@ -1005,7 +970,6 @@
   <script>
     // Variables for current user
     let currentUser = null;
-    let userRole = "student"; // Default
     
     // Variables for comment system
     let currentTaskId = '';
@@ -1055,8 +1019,6 @@
       // Store in localStorage for persistence across page refreshes
       localStorage.setItem('basketballTaskUser', JSON.stringify(currentUser));
       
-      userRole = role;
-      
       // Update user display
       const userDisplay = document.getElementById('current-user-display');
       if (userDisplay) {
@@ -1081,7 +1043,6 @@
       const savedUser = localStorage.getItem('basketballTaskUser');
       if (savedUser) {
         currentUser = JSON.parse(savedUser);
-        userRole = currentUser.role;
         
         // Update user display
         const userDisplay = document.getElementById('current-user-display');
@@ -1105,13 +1066,62 @@
         // Show the auth modal if no user is found
         showAuthModal();
       }
+      
+      // Set up registration button
+      const registerBtn = document.getElementById('register-btn');
+      if (registerBtn) {
+        registerBtn.addEventListener('click', function() {
+          if (!currentUser) {
+            alert("Please enter your name and title before registering for tasks.");
+            return;
+          }
+          
+          // Validate form
+          const validationErrors = validateTaskRegistration();
+          
+          if (validationErrors.length > 0) {
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.innerHTML = validationErrors.map(error => `<p>${error}</p>`).join('');
+            errorMessage.style.display = 'block';
+            return;
+          }
+          
+          // Collect selected tasks
+          const selectedTasks = Array.from(document.querySelectorAll('.task-checkbox:checked'));
+          
+          // Collect task data
+          const taskData = collectTaskData(selectedTasks);
+          
+          // Save tasks in Firebase
+          saveTaskRegistration(taskData)
+            .then(() => {
+              // Show confirmation
+              showConfirmationModal('Your task registration has been submitted successfully!');
+              
+              // Reset form
+              resetRegistrationForm();
+            })
+            .catch(error => {
+              console.error("Error registering tasks:", error);
+              alert("An error occurred while registering tasks.");
+            });
+        });
+      }
+      
+      // Set up auto-refresh for tracking table
+      setupAutoRefresh();
+      
+      // Add event listener to comment button
+      document.getElementById('post-comment-btn').addEventListener('click', postComment);
+      
+      // Initialize expandedTasks object
+      expandedTasks = {};
     });
 
     // Function to logout
     function logout() {
       localStorage.removeItem('basketballTaskUser');
       currentUser = null;
-      userRole = "student";
       
       // Clear form fields
       document.getElementById('name').value = '';
@@ -1124,27 +1134,6 @@
       }
       
       showAuthModal();
-    }
-    
-    // Function to get current user
-    function getCurrentUser() {
-      if (currentUser) {
-        return currentUser.name;
-      }
-      return null;
-    }
-    
-    // Function to get current user's title
-    function getUserTitle() {
-      if (currentUser) {
-        return currentUser.title;
-      }
-      return '';
-    }
-    
-    // Function to check if user is a teacher
-    function isTeacher() {
-      return userRole === 'teacher';
     }
     
     // New Tab functionality
@@ -1175,12 +1164,10 @@
     // Function to reset registration form
     function resetRegistrationForm() {
       // Don't clear name field anymore - keep the current user's name
-      const currentUserName = getCurrentUser();
-      document.getElementById('name').value = currentUserName || '';
-      
-      // Keep the title if it exists
-      const userTitle = getUserTitle();
-      document.getElementById('title').value = userTitle || '';
+      if (currentUser) {
+        document.getElementById('name').value = currentUser.name || '';
+        document.getElementById('title').value = currentUser.title || '';
+      }
       
       // Uncheck all task checkboxes
       document.querySelectorAll('.task-checkbox').forEach(checkbox => {
@@ -1206,7 +1193,7 @@
       document.getElementById('error-message').style.display = 'none';
     }
     
-    // Function to toggle visibility of subtasks
+    // Function to toggle visibility of subtasks - FIXED to maintain state
     function toggleSubtasks(parentId) {
       const subtasks = document.querySelectorAll(`tr[data-parent="${parentId}"]`);
       const button = event.target;
@@ -1230,8 +1217,8 @@
       const rows = document.querySelectorAll('#tracking-table tbody tr');
       
       rows.forEach(row => {
-        // Only show subtask rows, not main category rows
-        if (!row.classList.contains('subtask-row')) {
+        // Skip category headers
+        if (row.classList.contains('task-category')) {
           return;
         }
         
@@ -1239,13 +1226,25 @@
         if (taskName.includes(searchText)) {
           row.style.display = '';
           
-          // Show parent row if needed
-          const parentId = row.getAttribute('data-parent');
-          if (parentId) {
-            const parentRows = document.querySelectorAll(`tr.main-task[data-task-id="${parentId}"]`);
-            parentRows.forEach(parentRow => {
-              parentRow.style.display = '';
-            });
+          // Show parent category if needed
+          const categoryText = row.cells[1].textContent;
+          const categoryRows = document.querySelectorAll('#tracking-table tbody tr.task-category');
+          categoryRows.forEach(catRow => {
+            if (catRow.cells[0].textContent === categoryText) {
+              catRow.style.display = '';
+            }
+          });
+          
+          // If it's a main task row, also show its parent category
+          if (row.classList.contains('main-task')) {
+            const parentId = row.dataset.taskId;
+            if (expandedTasks[parentId]) {
+              // If this task was expanded, show its subtasks too
+              const subtaskRows = document.querySelectorAll(`tr[data-parent="${parentId}"]`);
+              subtaskRows.forEach(subtaskRow => {
+                subtaskRow.classList.remove('hidden');
+              });
+            }
           }
         } else {
           row.style.display = 'none';
@@ -1261,8 +1260,10 @@
       const rows = document.querySelectorAll('#tracking-table tbody tr');
       
       rows.forEach(row => {
-        // Only filter subtask rows, not main category rows
-        if (!row.classList.contains('subtask-row')) {
+        // Always show category headers, but hide them initially
+        // We'll show them again if any of their children are visible
+        if (row.classList.contains('task-category')) {
+          row.style.display = 'none';
           return;
         }
         
@@ -1271,7 +1272,7 @@
         // Filter by status
         if (statusFilter !== 'all') {
           const statusCell = row.cells[5];
-          const statusSelect = statusCell.querySelector('select');
+          const statusSelect = statusCell.querySelector('.status-select');
           if (statusSelect && statusSelect.value !== statusFilter) {
             showRow = false;
           }
@@ -1279,13 +1280,24 @@
         
         // Filter by category
         if (categoryFilter !== 'all') {
-          const categoryText = row.cells[1].textContent.toLowerCase();
-          if (!categoryText.includes(categoryFilter.toLowerCase())) {
+          const categoryText = row.cells[1].textContent;
+          if (categoryText !== categoryFilter) {
             showRow = false;
           }
         }
         
         row.style.display = showRow ? '' : 'none';
+        
+        // If this row is visible and it's a subtask, show its parent category
+        if (showRow) {
+          const categoryText = row.cells[1].textContent;
+          const categoryRows = document.querySelectorAll('#tracking-table tbody tr.task-category');
+          categoryRows.forEach(catRow => {
+            if (catRow.cells[0].textContent === categoryText) {
+              catRow.style.display = '';
+            }
+          });
+        }
       });
     }
     
@@ -1318,7 +1330,7 @@
     
     // Function to save task registration in Firebase
     function saveTaskRegistration(taskData) {
-      if (!currentUser) return;
+      if (!currentUser) return Promise.reject("No user logged in");
       
       const batch = [];
       
@@ -1444,22 +1456,26 @@
     
     // Function to get all people assigned to a specific task/subtask
     function getAllAssignedPeople(taskId, subtaskId) {
-      const tasks = getRegisteredTasks()
-        .then(tasks => {
-          const filteredTasks = tasks.filter(t => 
-            t.taskId === taskId && t.subtaskId === subtaskId
-          );
-          
-          // Extract unique names
-          const names = [...new Set(filteredTasks.map(t => t.name))];
-          return names;
-        })
-        .catch(error => {
-          console.error("Error getting assigned people:", error);
-          return [];
-        });
-      
-      return tasks;
+      return new Promise((resolve, reject) => {
+        database.ref('tasks')
+          .orderByChild('taskId')
+          .equalTo(taskId)
+          .once('value')
+          .then(snapshot => {
+            const names = [];
+            snapshot.forEach(childSnapshot => {
+              const task = childSnapshot.val();
+              if (task.subtaskId === subtaskId) {
+                names.push(task.name);
+              }
+            });
+            resolve([...new Set(names)]); // Return unique names
+          })
+          .catch(error => {
+            console.error("Error getting assigned people:", error);
+            reject(error);
+          });
+      });
     }
     
     // Function to check if a task/subtask has any assignees
@@ -1674,6 +1690,8 @@
           });
           
           // Sort comments by date
+          comments.sort((a, b) => a.timestamp
+ // Sort comments by date
           comments.sort((a, b) => a.timestamp - b.timestamp);
           
           if (comments.length === 0) {
@@ -1996,29 +2014,12 @@
         
         // Add tasks for this category
         categoryGroups[category].forEach(taskInfo => {
-          // Add main task row
-          const mainTaskRow = trackingTable.insertRow();
-          mainTaskRow.className = 'main-task';
-          mainTaskRow.dataset.taskId = taskInfo.id;
-          
-          // Task name cell with expand button
-          const taskNameCell = mainTaskRow.insertCell(0);
-          taskNameCell.innerHTML = `<button class="expand-btn" onclick="toggleSubtasks('${taskInfo.id}')">+</button> ${taskInfo.name}`;
-          
-          // Other cells
-          mainTaskRow.insertCell(1).textContent = category;
-          mainTaskRow.insertCell(2).innerHTML = '';
-          mainTaskRow.insertCell(3).textContent = '';
-          mainTaskRow.insertCell(4).textContent = '';
-          mainTaskRow.insertCell(5).textContent = '';
-          mainTaskRow.insertCell(6).textContent = '';
-          
-          // Add subtasks
+          // Add subtasks directly under category headers
           for (const subtaskId in taskInfo.subtasks) {
             const subtaskName = taskInfo.subtasks[subtaskId];
             
             const subtaskRow = trackingTable.insertRow();
-            subtaskRow.className = 'subtask-row hidden';
+            subtaskRow.className = 'subtask-row';
             subtaskRow.setAttribute('data-parent', taskInfo.id);
             subtaskRow.dataset.taskId = taskInfo.id;
             subtaskRow.dataset.subtaskId = subtaskId;
@@ -2086,7 +2087,8 @@
             expandedTasks[taskId] = (btn.textContent === '-');
           });
           
-          initializeTrackingTable();
+          // Don't actually refresh the table - Firebase real-time updates will handle this
+          // This prevents the table from collapsing when auto-refreshed
         }
       }, 30000); // 30 seconds
     }
@@ -2096,59 +2098,6 @@
       initializeTrackingTable();
       filterTasks(); // Apply initial filters
     }
-    
-    // Initialize the application
-    document.addEventListener('DOMContentLoaded', function() {
-      // Set up registration button
-      const registerBtn = document.getElementById('register-btn');
-      if (registerBtn) {
-        registerBtn.addEventListener('click', function() {
-          if (!currentUser) {
-            alert("Please enter your name and title before registering for tasks.");
-            return;
-          }
-          
-          // Validate form
-          const validationErrors = validateTaskRegistration();
-          
-          if (validationErrors.length > 0) {
-            const errorMessage = document.getElementById('error-message');
-            errorMessage.innerHTML = validationErrors.map(error => `<p>${error}</p>`).join('');
-            errorMessage.style.display = 'block';
-            return;
-          }
-          
-          // Collect selected tasks
-          const selectedTasks = Array.from(document.querySelectorAll('.task-checkbox:checked'));
-          
-          // Collect task data
-          const taskData = collectTaskData(selectedTasks);
-          
-          // Save tasks in Firebase
-          saveTaskRegistration(taskData)
-            .then(() => {
-              // Show confirmation
-              showConfirmationModal('Your task registration has been submitted successfully!');
-              
-              // Reset form
-              resetRegistrationForm();
-            })
-            .catch(error => {
-              console.error("Error registering tasks:", error);
-              alert("An error occurred while registering tasks.");
-            });
-        });
-      }
-      
-      // Set up auto-refresh for tracking table
-      setupAutoRefresh();
-      
-      // Add event listener to comment button
-      document.getElementById('post-comment-btn').addEventListener('click', postComment);
-      
-      // Initialize expandedTasks object
-      expandedTasks = {};
-    });
   </script>
 </body>
 </html>
