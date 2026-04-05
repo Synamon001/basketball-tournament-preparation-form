@@ -988,8 +988,8 @@
       document.getElementById('auth-modal').style.display = 'none';
     }
 
-    // Handle simplified login
-    document.getElementById('login-btn').addEventListener('click', function() {
+    // Function to handle login
+    function handleLogin() {
       const name = document.getElementById('login-name').value.trim();
       const title = document.getElementById('login-title').value.trim();
       
@@ -1036,87 +1036,7 @@
       
       // Initialize tracking tab
       initializeTrackingTab();
-    });
-
-    // Check for existing user on page load
-    document.addEventListener('DOMContentLoaded', function() {
-      const savedUser = localStorage.getItem('basketballTaskUser');
-      if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-        
-        // Update user display
-        const userDisplay = document.getElementById('current-user-display');
-        if (userDisplay) {
-          userDisplay.innerHTML = `User: <strong>${currentUser.name}</strong> (${currentUser.title})`;
-        }
-        
-        // Pre-fill form fields
-        document.getElementById('name').value = currentUser.name;
-        document.getElementById('title').value = currentUser.title;
-        
-        // Hide the auth modal
-        hideAuthModal();
-        
-        // Set up real-time listeners
-        setupRealtimeListeners();
-        
-        // Initialize tracking tab
-        initializeTrackingTab();
-      } else {
-        // Show the auth modal if no user is found
-        showAuthModal();
-      }
-      
-      // Set up registration button
-      const registerBtn = document.getElementById('register-btn');
-      if (registerBtn) {
-        registerBtn.addEventListener('click', function() {
-          if (!currentUser) {
-            alert("Please enter your name and title before registering for tasks.");
-            return;
-          }
-          
-          // Validate form
-          const validationErrors = validateTaskRegistration();
-          
-          if (validationErrors.length > 0) {
-            const errorMessage = document.getElementById('error-message');
-            errorMessage.innerHTML = validationErrors.map(error => `<p>${error}</p>`).join('');
-            errorMessage.style.display = 'block';
-            return;
-          }
-          
-          // Collect selected tasks
-          const selectedTasks = Array.from(document.querySelectorAll('.task-checkbox:checked'));
-          
-          // Collect task data
-          const taskData = collectTaskData(selectedTasks);
-          
-          // Save tasks in Firebase
-          saveTaskRegistration(taskData)
-            .then(() => {
-              // Show confirmation
-              showConfirmationModal('Your task registration has been submitted successfully!');
-              
-              // Reset form
-              resetRegistrationForm();
-            })
-            .catch(error => {
-              console.error("Error registering tasks:", error);
-              alert("An error occurred while registering tasks.");
-            });
-        });
-      }
-      
-      // Set up auto-refresh for tracking table
-      setupAutoRefresh();
-      
-      // Add event listener to comment button
-      document.getElementById('post-comment-btn').addEventListener('click', postComment);
-      
-      // Initialize expandedTasks object
-      expandedTasks = {};
-    });
+    }
 
     // Function to logout
     function logout() {
@@ -1690,8 +1610,6 @@
           });
           
           // Sort comments by date
-          comments.sort((a, b) => a.timestamp
- // Sort comments by date
           comments.sort((a, b) => a.timestamp - b.timestamp);
           
           if (comments.length === 0) {
@@ -1777,6 +1695,8 @@
     }
     
     // Function to display task history
+    function viewTaskHistory(
+       // Function to display task history
     function viewTaskHistory(taskId, subtaskId) {
       const historyContainer = document.getElementById('history-container');
       historyContainer.innerHTML = '<p>Loading history...</p>';
@@ -2060,18 +1980,8 @@
         registeredTasks.forEach(task => {
           updateTaskInTrackingTable(task);
         });
-        
-        // Restore expanded states after updating
-        for (const taskId in expandedTasks) {
-          if (expandedTasks[taskId]) {
-            const expandBtns = document.querySelectorAll(`tr.main-task[data-task-id="${taskId}"] .expand-btn`);
-            expandBtns.forEach(btn => {
-              if (btn.textContent === '+') {
-                btn.click();
-              }
-            });
-          }
-        }
+      }).catch(error => {
+        console.error("Error getting registered tasks:", error);
       });
     }
     
@@ -2086,9 +1996,6 @@
             const taskId = btn.closest('tr').dataset.taskId;
             expandedTasks[taskId] = (btn.textContent === '-');
           });
-          
-          // Don't actually refresh the table - Firebase real-time updates will handle this
-          // This prevents the table from collapsing when auto-refreshed
         }
       }, 30000); // 30 seconds
     }
@@ -2098,6 +2005,90 @@
       initializeTrackingTable();
       filterTasks(); // Apply initial filters
     }
+    
+    // Initialize the application
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check for existing user
+      const savedUser = localStorage.getItem('basketballTaskUser');
+      if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        
+        // Update user display
+        const userDisplay = document.getElementById('current-user-display');
+        if (userDisplay) {
+          userDisplay.innerHTML = `User: <strong>${currentUser.name}</strong> (${currentUser.title})`;
+        }
+        
+        // Pre-fill form fields
+        document.getElementById('name').value = currentUser.name;
+        document.getElementById('title').value = currentUser.title;
+        
+        // Hide the auth modal
+        hideAuthModal();
+        
+        // Set up real-time listeners
+        setupRealtimeListeners();
+        
+        // Initialize tracking tab
+        initializeTrackingTab();
+      } else {
+        // Show the auth modal if no user is found
+        showAuthModal();
+      }
+      
+      // Add event listener to login button
+      document.getElementById('login-btn').addEventListener('click', handleLogin);
+      
+      // Set up registration button
+      const registerBtn = document.getElementById('register-btn');
+      if (registerBtn) {
+        registerBtn.addEventListener('click', function() {
+          if (!currentUser) {
+            alert("Please enter your name and title before registering for tasks.");
+            return;
+          }
+          
+          // Validate form
+          const validationErrors = validateTaskRegistration();
+          
+          if (validationErrors.length > 0) {
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.innerHTML = validationErrors.map(error => `<p>${error}</p>`).join('');
+            errorMessage.style.display = 'block';
+            return;
+          }
+          
+          // Collect selected tasks
+          const selectedTasks = Array.from(document.querySelectorAll('.task-checkbox:checked'));
+          
+          // Collect task data
+          const taskData = collectTaskData(selectedTasks);
+          
+          // Save tasks in Firebase
+          saveTaskRegistration(taskData)
+            .then(() => {
+              // Show confirmation
+              showConfirmationModal('Your task registration has been submitted successfully!');
+              
+              // Reset form
+              resetRegistrationForm();
+            })
+            .catch(error => {
+              console.error("Error registering tasks:", error);
+              alert("An error occurred while registering tasks.");
+            });
+        });
+      }
+      
+      // Add event listener to comment button
+      document.getElementById('post-comment-btn').addEventListener('click', postComment);
+      
+      // Set up auto-refresh for tracking table
+      setupAutoRefresh();
+      
+      // Initialize expandedTasks object
+      expandedTasks = {};
+    });
   </script>
 </body>
 </html>
