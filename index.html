@@ -6,8 +6,6 @@
   <title>BASKETBALL TOURNAMENT TASKS SIGN UP FORM</title>
   <!-- Firebase App (core) -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <!-- Firebase Auth -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <!-- Firebase Realtime Database -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
   <!-- Firebase Storage (for potential attachments) -->
@@ -30,8 +28,6 @@
     
     // Database reference
     const database = firebase.database();
-    // Authentication reference
-    const auth = firebase.auth();
     // Storage reference
     const storage = firebase.storage();
   </script>
@@ -635,12 +631,6 @@
   <h1>BASKETBALL TOURNAMENT TASKS SIGN UP FORM</h1>
   <h2 class="subtitle">Register for 1 Task or more</h2>
   
-  <!-- User Controls -->
-  <div class="user-controls">
-    <span id="current-user-display" class="user-display"></span>
-    <button onclick="logout()">Logout</button>
-  </div>
-  
   <!-- Event Information -->
   <div class="event-info">
     <p><strong>Event Date:</strong> In May 2026</p>
@@ -987,47 +977,9 @@
     </div>
   </div>
   
-  <!-- Authentication Modal -->
-  <div id="auth-modal" class="modal">
-    <div class="modal-content">
-      <h3 id="auth-title">Login</h3>
-      
-      <div id="login-form">
-        <label for="login-email">Email:</label>
-        <input type="email" id="login-email" required>
-        
-        <label for="login-password">Password:</label>
-        <input type="password" id="login-password" required>
-        
-        <button id="login-btn" class="submit-btn">Login</button>
-        <p>Don't have an account? <a href="#" id="show-signup">Sign up</a></p>
-      </div>
-      
-      <div id="signup-form" style="display: none;">
-        <label for="signup-name">Full Name:</label>
-        <input type="text" id="signup-name" required>
-        
-        <label for="signup-email">Email:</label>
-        <input type="email" id="signup-email" required>
-        
-        <label for="signup-password">Password:</label>
-        <input type="password" id="signup-password" required>
-        
-        <label for="signup-title">Title (student, teacher, etc.):</label>
-        <input type="text" id="signup-title" required>
-        
-        <button id="signup-btn" class="submit-btn">Sign up</button>
-        <p>Already have an account? <a href="#" id="show-login">Login</a></p>
-      </div>
-      
-      <div id="auth-error" class="error-message"></div>
-    </div>
-  </div>
-  
   <script>
     // Variables for current user
     let currentUser = null;
-    let userRole = "student"; // Default
     
     // Variables for comment system
     let currentTaskId = '';
@@ -1036,169 +988,10 @@
     // Store expanded state for task categories
     let expandedTasks = {};
 
-    // Function to show authentication modal
-    function showAuthModal() {
-      document.getElementById('auth-modal').style.display = 'flex';
-    }
-
-    // Function to hide authentication modal
-    function hideAuthModal() {
-      document.getElementById('auth-modal').style.display = 'none';
-    }
-
-    // Toggle between login and signup forms
-    document.getElementById('show-signup').addEventListener('click', function(e) {
-      e.preventDefault();
-      document.getElementById('login-form').style.display = 'none';
-      document.getElementById('signup-form').style.display = 'block';
-      document.getElementById('auth-title').textContent = 'Sign up';
-    });
-
-    document.getElementById('show-login').addEventListener('click', function(e) {
-      e.preventDefault();
-      document.getElementById('signup-form').style.display = 'none';
-      document.getElementById('login-form').style.display = 'block';
-      document.getElementById('auth-title').textContent = 'Login';
-    });
-
-    // Handle signup
-    document.getElementById('signup-btn').addEventListener('click', function() {
-      const email = document.getElementById('signup-email').value;
-      const password = document.getElementById('signup-password').value;
-      const name = document.getElementById('signup-name').value;
-      const title = document.getElementById('signup-title').value;
-      
-      const authError = document.getElementById('auth-error');
-      
-      if (!email || !password || !name || !title) {
-        authError.textContent = 'All fields are required';
-        authError.style.display = 'block';
-        return;
-      }
-      
-      // Create user in Firebase Auth
-      auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-          // Save additional information in the database
-          const user = userCredential.user;
-          
-          // Determine role based on title
-          let role = "student";
-          if (title.toLowerCase().includes('teacher') || 
-              title.toLowerCase().includes('prof')) {
-            role = "teacher";
-          }
-          
-          // Save profile in database
-          return database.ref('users/' + user.uid).set({
-            name: name,
-            email: email,
-            title: title,
-            role: role,
-            createdAt: firebase.database.ServerValue.TIMESTAMP
-          });
-        })
-        .then(() => {
-          hideAuthModal();
-        })
-        .catch((error) => {
-          authError.textContent = error.message;
-          authError.style.display = 'block';
-        });
-    });
-
-    // Handle login
-    document.getElementById('login-btn').addEventListener('click', function() {
-      const email = document.getElementById('login-email').value;
-      const password = document.getElementById('login-password').value;
-      
-      const authError = document.getElementById('auth-error');
-      
-      if (!email || !password) {
-        authError.textContent = 'Email and password required';
-        authError.style.display = 'block';
-        return;
-      }
-      
-      auth.signInWithEmailAndPassword(email, password)
-        .then(() => {
-          hideAuthModal();
-        })
-        .catch((error) => {
-          authError.textContent = error.message;
-          authError.style.display = 'block';
-        });
-    });
-
-    // Observe authentication state
-    auth.onAuthStateChanged(function(user) {
-      if (user) {
-        // User is logged in
-        database.ref('users/' + user.uid).once('value')
-          .then((snapshot) => {
-            const userData = snapshot.val();
-            currentUser = {
-              uid: user.uid,
-              name: userData.name,
-              email: user.email,
-              title: userData.title,
-              role: userData.role
-            };
-            
-            userRole = userData.role;
-            
-            // Update user display
-            const userDisplay = document.getElementById('current-user-display');
-            if (userDisplay) {
-              userDisplay.innerHTML = `User: <strong>${userData.name}</strong> (${userData.title})`;
-            }
-            
-            // Pre-fill form fields
-            document.getElementById('name').value = userData.name;
-            document.getElementById('title').value = userData.title;
-            
-            // Set up real-time listeners
-            setupRealtimeListeners();
-            
-            // Initialize tracking tab
-            initializeTrackingTab();
-          });
-      } else {
-        // User is not logged in, show authentication modal
-        currentUser = null;
-        showAuthModal();
-      }
-    });
-
-    // Function to logout
-    function logout() {
-      auth.signOut().then(() => {
-        // Redirect or show login modal
-        showAuthModal();
-      }).catch((error) => {
-        console.error("Logout error:", error);
-      });
-    }
-    
-    // Function to get current user
-    function getCurrentUser() {
-      if (currentUser) {
-        return currentUser.name;
-      }
-      return null;
-    }
-    
-    // Function to get current user's title
-    function getUserTitle() {
-      if (currentUser) {
-        return currentUser.title;
-      }
-      return '';
-    }
-    
-    // Function to check if user is a teacher
-    function isTeacher() {
-      return userRole === 'teacher';
+    // Function to get current user's role
+    function getUserRole() {
+      const title = document.getElementById('title').value.toLowerCase();
+      return (title.includes('teacher') || title.includes('prof')) ? 'teacher' : 'student';
     }
     
     // New Tab functionality
@@ -1219,22 +1012,13 @@
       if (tabName === 'tracking') {
         initializeTrackingTab();
       }
-      
-      // Reset registration form when switching to registration tab
-      if (tabName === 'registration') {
-        resetRegistrationForm();
-      }
     }
     
     // Function to reset registration form
     function resetRegistrationForm() {
-      // Don't clear name field anymore - keep the current user's name
-      const currentUserName = getCurrentUser();
-      document.getElementById('name').value = currentUserName || '';
-      
-      // Keep the title if it exists
-      const userTitle = getUserTitle();
-      document.getElementById('title').value = userTitle || '';
+      // Keep name and title
+      const currentName = document.getElementById('name').value;
+      const currentTitle = document.getElementById('title').value;
       
       // Uncheck all task checkboxes
       document.querySelectorAll('.task-checkbox').forEach(checkbox => {
@@ -1258,6 +1042,10 @@
       
       // Hide error message
       document.getElementById('error-message').style.display = 'none';
+      
+      // Restore name and title
+      document.getElementById('name').value = currentName;
+      document.getElementById('title').value = currentTitle;
     }
     
     // Function to toggle visibility of subtasks
@@ -1356,8 +1144,8 @@
               const task = childSnapshot.val();
               if (task.subtaskId === subtaskId) {
                 users.push({
-                  name: task.userName,
-                  role: task.userRole
+                  name: task.name,
+                  role: task.userRole || (task.title && (task.title.toLowerCase().includes('teacher') ? 'teacher' : 'student'))
                 });
               }
             });
@@ -1372,16 +1160,10 @@
     
     // Function to save task registration in Firebase
     function saveTaskRegistration(taskData) {
-      if (!currentUser) return;
-      
       const batch = [];
       
       taskData.forEach(task => {
-        // Add user ID and timestamp
-        task.userId = currentUser.uid;
-        task.userName = currentUser.name;
-        task.userTitle = currentUser.title;
-        task.userRole = currentUser.role;
+        // Add timestamp
         task.createdAt = firebase.database.ServerValue.TIMESTAMP;
         
         // Create new entry in database
@@ -1417,6 +1199,7 @@
       const taskData = [];
       const name = document.getElementById('name').value;
       const title = document.getElementById('title').value;
+      const userRole = getUserRole();
       
       selectedTasks.forEach(taskCheckbox => {
         const taskId = taskCheckbox.value;
@@ -1446,12 +1229,17 @@
         const notesTextarea = taskGroup.querySelector(`textarea[id="${taskId}-notes"]`);
         const notes = notesTextarea ? notesTextarea.value : '';
         
+        // Create a unique user ID based on name and timestamp
+        const userId = `${name.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}`;
+        
         taskData.push({
           taskId: taskId,
           subtaskId: subtaskId,
           subtaskName: subtaskName,
           name: name,
           title: title,
+          userRole: userRole,
+          userId: userId,
           deadline: deadline,
           reminderDate: reminderDate,
           reminderTime: reminderTime,
@@ -1527,10 +1315,15 @@
     
     // Function to update task status
     function updateTaskStatus(taskId, subtaskId, status) {
-      if (!currentUser) {
-        alert("Please log in to update task status.");
+      const name = document.getElementById('name').value.trim();
+      const title = document.getElementById('title').value.trim();
+      
+      if (!name || !title) {
+        alert("Please enter your name and title before updating task status.");
         return;
       }
+      
+      const userRole = getUserRole();
       
       // Find the task in Firebase
       database.ref('tasks').orderByChild('taskId').equalTo(taskId).once('value')
@@ -1540,13 +1333,13 @@
             
             // Check if it's the right subtask
             if (task.subtaskId === subtaskId) {
-              // Check permissions
-              if (currentUser.role === 'teacher' || task.userId === currentUser.uid) {
+              // Check permissions - teachers can update any task, students only their own
+              if (userRole === 'teacher' || task.name === name) {
                 // Update status
                 database.ref('tasks/' + childSnapshot.key).update({
                   status: status,
                   lastUpdated: firebase.database.ServerValue.TIMESTAMP,
-                  lastUpdatedBy: currentUser.uid
+                  lastUpdatedBy: name
                 });
                 
                 // Add to history
@@ -1555,8 +1348,7 @@
                   subtaskId: subtaskId,
                   status: status,
                   timestamp: firebase.database.ServerValue.TIMESTAMP,
-                  userId: currentUser.uid,
-                  userName: currentUser.name
+                  userName: name
                 });
               } else {
                 alert("You can only update your own tasks.");
@@ -1568,10 +1360,15 @@
 
     // Function to remove a task
     function removeTask(taskId, subtaskId) {
-      if (!currentUser) {
-        alert("Please log in to delete tasks.");
+      const name = document.getElementById('name').value.trim();
+      const title = document.getElementById('title').value.trim();
+      
+      if (!name || !title) {
+        alert("Please enter your name and title before removing tasks.");
         return;
       }
+      
+      const userRole = getUserRole();
       
       database.ref('tasks').orderByChild('taskId').equalTo(taskId).once('value')
         .then(snapshot => {
@@ -1580,8 +1377,8 @@
             
             // Check if it's the right subtask
             if (task.subtaskId === subtaskId) {
-              // Check permissions
-              if (currentUser.role === 'teacher' || task.userId === currentUser.uid) {
+              // Check permissions - teachers can remove any task, students only their own
+              if (userRole === 'teacher' || task.name === name) {
                 // Delete the task
                 database.ref('tasks/' + childSnapshot.key).remove();
                 
@@ -1591,8 +1388,7 @@
                   subtaskId: subtaskId,
                   action: 'removed',
                   timestamp: firebase.database.ServerValue.TIMESTAMP,
-                  userId: currentUser.uid,
-                  userName: currentUser.name
+                  userName: name
                 });
               } else {
                 alert("You can only delete your own tasks.");
@@ -1703,7 +1499,7 @@
         }
         
         // Load comments
-loadComments(taskId, subtaskId);
+        loadComments(taskId, subtaskId);
         
         document.getElementById('assignees-modal').style.display = 'flex';
       });
@@ -1739,7 +1535,7 @@ loadComments(taskId, subtaskId);
               const commentElement = document.createElement('div');
               commentElement.className = 'comment';
               
-              const isCurrentUser = comment.userId === currentUser?.uid;
+              const isCurrentUser = comment.userName === document.getElementById('name').value;
               if (isCurrentUser) {
                 commentElement.classList.add('own-comment');
               }
@@ -1764,8 +1560,11 @@ loadComments(taskId, subtaskId);
 
     // Function to post a comment
     function postComment() {
-      if (!currentUser) {
-        alert("Please log in to add a comment.");
+      const name = document.getElementById('name').value.trim();
+      const title = document.getElementById('title').value.trim();
+      
+      if (!name || !title) {
+        alert("Please enter your name and title before posting comments.");
         return;
       }
       
@@ -1790,9 +1589,9 @@ loadComments(taskId, subtaskId);
             taskIdentifier: `${currentTaskId}_${currentSubtaskId}`, // For easier queries
             taskName: taskName,
             text: commentText,
-            userId: currentUser.uid,
-            userName: currentUser.name,
-            userRole: currentUser.role,
+            userName: name,
+            userTitle: title,
+            userRole: getUserRole(),
             timestamp: firebase.database.ServerValue.TIMESTAMP
           });
         })
@@ -1921,7 +1720,7 @@ loadComments(taskId, subtaskId);
       database.ref('comments').on('child_added', (snapshot) => {
         const comment = snapshot.val();
         // Show notification for new comments
-        if (comment.userId !== currentUser?.uid) {
+        if (comment.userName !== document.getElementById('name').value) {
           showNotification(`New comment from ${comment.userName} on task "${comment.taskName}"`);
         }
       });
@@ -2159,8 +1958,13 @@ loadComments(taskId, subtaskId);
       const registerBtn = document.getElementById('register-btn');
       if (registerBtn) {
         registerBtn.addEventListener('click', function() {
-          if (!currentUser) {
-            alert("Please log in to register for tasks.");
+          const name = document.getElementById('name').value.trim();
+          const title = document.getElementById('title').value.trim();
+          
+          if (!name || !title) {
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.innerHTML = '<p>Please enter your name and title before registering for tasks.</p>';
+            errorMessage.style.display = 'block';
             return;
           }
           
@@ -2204,6 +2008,9 @@ loadComments(taskId, subtaskId);
       
       // Initialize expandedTasks object
       expandedTasks = {};
+      
+      // Set up real-time listeners
+      setupRealtimeListeners();
     });
   </script>
 </body>
