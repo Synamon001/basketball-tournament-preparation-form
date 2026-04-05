@@ -562,6 +562,40 @@
       from { transform: translateX(100%); }
       to { transform: translateX(0); }
     }
+    
+    /* Styles for edit form */
+    .edit-form {
+      width: 100%;
+    }
+
+    .edit-form input, .edit-form textarea {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    .edit-form label {
+      font-weight: bold;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    .edit-form button {
+      background-color: #3498db;
+      color: white;
+      padding: 8px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+
+    .edit-form button:hover {
+      background-color: #2980b9;
+    }
   </style>
 </head>
 <body>
@@ -886,7 +920,7 @@
   <!-- Modal for displaying assignees -->
   <div id="assignees-modal" class="modal" style="display: none;">
     <div class="modal-content">
-      <h3>People assigned to this task</h3>
+      <h3>Task Discussion</h3>
       <div id="assignee-list" class="assignee-list"></div>
       
       <!-- Comments section -->
@@ -895,6 +929,11 @@
         <div id="comments-container" class="comments-container"></div>
         
         <div class="comment-form">
+          <p style="font-size: 14px; color: #555; margin-bottom: 10px;">Anyone can post a comment - just enter your name below:</p>
+          
+          <label for="commenter-name">Your Name:</label>
+          <input type="text" id="commenter-name" placeholder="Enter your name" style="margin-bottom: 10px;">
+          
           <textarea id="new-comment" placeholder="Add a comment..."></textarea>
           <button id="post-comment-btn" class="action-btn">Post</button>
         </div>
@@ -1449,9 +1488,182 @@
     }
     
     // Function to edit a task
-    function editTask(taskId) {
-      alert("Editing feature to be implemented for task: " + taskId);
-      // Implementation to come
+    function editTask(subtaskId) {
+      // Find the task in the database
+      let taskToEdit = null;
+      let taskId = null;
+      
+      for (const task of taskDatabase) {
+        if (task.subtaskId === subtaskId) {
+          taskToEdit = task;
+          taskId = task.taskId;
+          break;
+        }
+      }
+      
+      if (!taskToEdit) {
+        // If no task is found, find the taskId from the row
+        const row = document.querySelector(`tr[data-subtask-id="${subtaskId}"]`);
+        if (row) {
+          taskId = row.dataset.taskId;
+        } else {
+          // Try another selector approach
+          const rows = document.querySelectorAll('tr.subtask-row');
+          for (const r of rows) {
+            if (r.dataset.subtaskId === subtaskId) {
+              taskId = r.dataset.taskId;
+              break;
+            }
+          }
+          
+          if (!taskId) {
+            alert("Task not found");
+            return;
+          }
+        }
+      }
+      
+      // Create a simple edit form
+      // Find the task name from the table
+      let taskName = "Task";
+      const rows = document.querySelectorAll('tr.subtask-row');
+      for (const row of rows) {
+        if (row.dataset.subtaskId === subtaskId) {
+          taskName = row.cells[0].textContent;
+          break;
+        }
+      }
+      
+      const editForm = `
+        <div class="edit-form">
+          <h3>Edit Task: ${taskName}</h3>
+          
+          <label for="edit-deadline">Deadline:</label>
+          <input type="date" id="edit-deadline" value="${taskToEdit?.deadline || ''}">
+          
+          <label for="edit-time">Reminder time:</label>
+          <input type="time" id="edit-time" value="${taskToEdit?.reminderTime || ''}">
+          
+          <label for="edit-notes">Notes:</label>
+          <textarea id="edit-notes" rows="3">${taskToEdit?.notes || ''}</textarea>
+          
+          <div style="margin-top: 15px;">
+            <button onclick="saveTaskEdit('${taskId}', '${subtaskId}')">Save Changes</button>
+            <button onclick="closeEditModal()">Cancel</button>
+          </div>
+        </div>
+      `;
+      
+      const modalContent = document.createElement('div');
+      modalContent.className = 'modal-content';
+      modalContent.innerHTML = editForm;
+      
+      const modal = document.createElement('div');
+      modal.id = 'edit-modal';
+      modal.className = 'modal';
+      modal.appendChild(modalContent);
+      
+      // Remove any existing edit modal
+      const existingModal = document.getElementById('edit-modal');
+      if (existingModal) {
+        existingModal.remove();
+      }
+      
+      document.body.appendChild(modal);
+      modal.style.display = 'flex';
+    }
+    
+    // Function to save task edits
+    function saveTaskEdit(taskId, subtaskId) {
+      const deadline = document.getElementById('edit-deadline').value;
+      const reminderTime = document.getElementById('edit-time').value;
+      const notes = document.getElementById('edit-notes').value;
+      
+      // Find the task in the database
+      let taskFound = false;
+      
+      for (let i = 0; i < taskDatabase.length; i++) {
+        if (taskDatabase[i].taskId === taskId && taskDatabase[i].subtaskId === subtaskId) {
+          // Update the task
+          taskDatabase[i].deadline = deadline;
+          taskDatabase[i].reminderTime = reminderTime;
+          taskDatabase[i].notes = notes;
+          taskFound = true;
+          
+          // Add to history
+          taskHistory.push({
+            taskId: taskId,
+            subtaskId: subtaskId,
+            action: 'edited',
+            timestamp: Date.now(),
+            userId: currentUser?.uid || 'guest',
+            userName: currentUser?.name || 'Guest User'
+          });
+          
+          break;
+        }
+      }
+      
+      // If task wasn't found, create a new one
+      if (!taskFound) {
+        // Find the task name from the table
+        let taskName = "Task";
+        const rows = document.querySelectorAll('tr.subtask-row');
+        for (const row of rows) {
+          if (row.dataset.subtaskId === subtaskId) {
+            taskName = row.cells[0].textContent;
+            break;
+          }
+        }
+        
+        const newTask = {
+          taskId: taskId,
+          subtaskId: subtaskId,
+          subtaskName: taskName,
+          deadline: deadline,
+          reminderTime: reminderTime,
+          notes: notes,
+          status: 'not-started',
+          userId: 'editor-' + Date.now(),
+          name: 'Editor',
+          title: 'Guest',
+          createdAt: Date.now()
+        };
+        
+        taskDatabase.push(newTask);
+        
+        // Add to history
+        taskHistory.push({
+          taskId: taskId,
+          subtaskId: subtaskId,
+          action: 'created',
+          timestamp: Date.now(),
+          userId: 'editor-' + Date.now(),
+          userName: 'Guest Editor'
+        });
+      }
+      
+      // Save to localStorage
+      localStorage.setItem('taskDatabase', JSON.stringify(taskDatabase));
+      localStorage.setItem('taskHistory', JSON.stringify(taskHistory));
+      
+      // Update the tracking table
+      initializeTrackingTable();
+      
+      // Close the modal
+      closeEditModal();
+      
+      // Show notification
+      showNotification("Task updated successfully");
+    }
+    
+    // Function to close edit modal
+    function closeEditModal() {
+      const modal = document.getElementById('edit-modal');
+      if (modal) {
+        modal.style.display = 'none';
+        modal.remove();
+      }
     }
     
     // Function to display assignees and comments
@@ -1479,7 +1691,84 @@
       // Load comments
       loadComments(taskId, subtaskId);
       
+      // Pre-fill the commenter name if user is logged in
+      if (currentUser) {
+        document.getElementById('commenter-name').value = currentUser.name;
+      } else {
+        // Clear the name field if no user is logged in
+        document.getElementById('commenter-name').value = '';
+      }
+      
       document.getElementById('assignees-modal').style.display = 'flex';
+    }
+    
+    // Function to post a comment
+    function postComment() {
+      const commentText = document.getElementById('new-comment').value.trim();
+      const commenterName = document.getElementById('commenter-name').value.trim();
+      
+      if (!commentText) {
+        alert("Please enter a comment.");
+        return;
+      }
+      
+      if (!commenterName) {
+        alert("Please enter your name.");
+        return;
+      }
+      
+      // Get task name
+      let taskName = "";
+      const taskId = currentTaskId;
+      const subtaskId = currentSubtaskId;
+      
+      // Find task name in database
+      let taskFound = false;
+      for (const task of taskDatabase) {
+        if (task.taskId === taskId && task.subtaskId === subtaskId) {
+          taskName = task.subtaskName || "task";
+          taskFound = true;
+          break;
+        }
+      }
+      
+      // If task not found in database, get name from the table
+      if (!taskFound) {
+        const subtaskRows = document.querySelectorAll(`tr[data-subtask-id="${subtaskId}"]`);
+        if (subtaskRows.length > 0) {
+          taskName = subtaskRows[0].cells[0].textContent;
+        } else {
+          taskName = "task";
+        }
+      }
+      
+      // Create comment
+      const newComment = {
+        id: Date.now() + Math.random().toString(36).substring(2, 15),
+        taskId: taskId,
+        subtaskId: subtaskId,
+        taskIdentifier: `${taskId}_${subtaskId}`,
+        taskName: taskName,
+        text: commentText,
+        userId: 'commenter-' + Date.now(),
+        userName: commenterName,
+        timestamp: Date.now()
+      };
+      
+      // Add to database
+      commentDatabase.push(newComment);
+      
+      // Save to localStorage
+      localStorage.setItem('commentDatabase', JSON.stringify(commentDatabase));
+      
+      // Clear text field but keep the name
+      document.getElementById('new-comment').value = '';
+      
+      // Reload comments
+      loadComments(taskId, subtaskId);
+      
+      // Show notification
+      showNotification(`Comment added to task "${taskName}"`);
     }
     
     // Function to load comments
@@ -1496,7 +1785,7 @@
       taskComments.sort((a, b) => a.timestamp - b.timestamp);
       
       if (taskComments.length === 0) {
-        commentsContainer.innerHTML = '<p>No comments yet.</p>';
+        commentsContainer.innerHTML = '<p>No comments yet. Be the first to add a comment!</p>';
       } else {
         commentsContainer.innerHTML = '';
         
@@ -1504,7 +1793,8 @@
           const commentElement = document.createElement('div');
           commentElement.className = 'comment';
           
-          const isCurrentUser = comment.userId === currentUser?.uid;
+          // Check if this comment was posted by the current user (if logged in)
+          const isCurrentUser = currentUser && comment.userName === currentUser.name;
           if (isCurrentUser) {
             commentElement.classList.add('own-comment');
           }
@@ -1521,112 +1811,61 @@
         });
       }
     }
-
-    // Function to post a comment
-    function postComment() {
-      if (!currentUser) {
-        alert("Please enter your name and title before adding a comment.");
-        return;
-      }
-      
-      const commentText = document.getElementById('new-comment').value.trim();
-      if (!commentText) return;
-      
-      // Get task name
-      let taskName = "";
-      taskDatabase.forEach(task => {
-        if (task.taskId === currentTaskId && task.subtaskId === currentSubtaskId) {
-          taskName = task.subtaskName || "main task";
-        }
-      });
-      
-      // Create comment
-      const newComment = {
-        id: Date.now() + Math.random().toString(36).substring(2, 15),
-        taskId: currentTaskId,
-        subtaskId: currentSubtaskId,
-        taskIdentifier: `${currentTaskId}_${currentSubtaskId}`,
-        taskName: taskName,
-        text: commentText,
-        userId: currentUser.uid,
-        userName: currentUser.name,
-        userRole: currentUser.role,
-        timestamp: Date.now()
-      };
-      
-      // Add to database
-      commentDatabase.push(newComment);
-      
-      // Save to localStorage
-      localStorage.setItem('commentDatabase', JSON.stringify(commentDatabase));
-      
-      // Clear text field
-      document.getElementById('new-comment').value = '';
-      
-      // Reload comments
-      loadComments(currentTaskId, currentSubtaskId);
-      
-      // Show notification
-      showNotification(`Comment added to task "${taskName}"`);
-    }
     
-    // Function to close the modal
-    function closeModal() {
-      document.getElementById('assignees-modal').style.display = 'none';
-    }
-    
-    // Function to display task history
+    // Function to view task history
     function viewTaskHistory(taskId, subtaskId) {
       const historyContainer = document.getElementById('history-container');
-      historyContainer.innerHTML = '<p>Loading history...</p>';
+      historyContainer.innerHTML = '';
       
-      // Filter history items for this task
-      const historyItems = taskHistory.filter(item => 
-        item.taskId === taskId && item.subtaskId === subtaskId
+      // Filter history entries for this task
+      const taskHistoryEntries = taskHistory.filter(entry => 
+        entry.taskId === taskId && entry.subtaskId === subtaskId
       );
       
-      // Sort by date (most recent first)
-      historyItems.sort((a, b) => b.timestamp - a.timestamp);
-      
-      if (historyItems.length === 0) {
+      if (taskHistoryEntries.length === 0) {
         historyContainer.innerHTML = '<p>No history available for this task.</p>';
       } else {
-        historyContainer.innerHTML = '';
-        
+        // Create a table for history
         const table = document.createElement('table');
         table.className = 'history-table';
         
-        // Table header
+        // Add table header
         const thead = document.createElement('thead');
         thead.innerHTML = `
           <tr>
             <th>Date</th>
-            <th>User</th>
             <th>Action</th>
+            <th>User</th>
           </tr>
         `;
         table.appendChild(thead);
         
-        // Table body
+        // Add table body
         const tbody = document.createElement('tbody');
-        historyItems.forEach(item => {
+        
+        // Sort history by date (newest first)
+        taskHistoryEntries.sort((a, b) => b.timestamp - a.timestamp);
+        
+        taskHistoryEntries.forEach(entry => {
           const row = document.createElement('tr');
           
           // Format date
-          const date = new Date(item.timestamp).toLocaleString();
+          const date = new Date(entry.timestamp).toLocaleString();
           
-          // Determine action
-          let action = '';
-          if (item.action === 'removed') {
-            action = 'Task removed';
-          } else if (item.status) {
-            action = `Status changed to "${item.status.replace('-', ' ')}"`;
+          // Determine action text
+          let actionText = '';
+          if (entry.status) {
+            actionText = `Changed status to: ${entry.status}`;
+          } else if (entry.action) {
+            actionText = `Task ${entry.action}`;
+          } else {
+            actionText = 'Modified task';
           }
           
           row.innerHTML = `
             <td>${date}</td>
-            <td>${item.userName}</td>
-            <td>${action}</td>
+            <td>${actionText}</td>
+            <td>${entry.userName || 'Unknown user'}</td>
           `;
           
           tbody.appendChild(row);
@@ -1638,7 +1877,12 @@
       
       document.getElementById('history-modal').style.display = 'flex';
     }
-
+    
+    // Function to close modal
+    function closeModal() {
+      document.getElementById('assignees-modal').style.display = 'none';
+    }
+    
     // Function to close history modal
     function closeHistoryModal() {
       document.getElementById('history-modal').style.display = 'none';
@@ -1653,32 +1897,40 @@
     // Function to close confirmation modal
     function closeConfirmationModal() {
       document.getElementById('confirmation-modal').style.display = 'none';
-      
-      // Switch to tracking tab
-      openNewTab('tracking');
     }
     
     // Function to show notification
     function showNotification(message) {
+      // Remove any existing notification
+      const existingNotification = document.querySelector('.notification');
+      if (existingNotification) {
+        existingNotification.remove();
+      }
+      
+      // Create notification element
       const notification = document.createElement('div');
       notification.className = 'notification';
       notification.textContent = message;
       
+      // Add to body
       document.body.appendChild(notification);
       
-      // Fade out notification after 5 seconds
+      // Remove after 3 seconds
       setTimeout(() => {
         notification.classList.add('fade-out');
         setTimeout(() => {
           notification.remove();
         }, 500);
-      }, 5000);
+      }, 3000);
     }
     
-    // Function to initialize the tracking table
+    // Function to initialize tracking table
     function initializeTrackingTable() {
-      const trackingTable = document.getElementById('tracking-table').getElementsByTagName('tbody')[0];
-      trackingTable.innerHTML = ''; // Clear existing content
+      const trackingTable = document.getElementById('tracking-table');
+      const tableBody = trackingTable.querySelector('tbody');
+      
+      // Clear existing rows
+      tableBody.innerHTML = '';
       
       // Define task categories
       const taskCategories = {
@@ -1779,7 +2031,7 @@
       // Add category headers and their subtasks
       for (const category in categoryGroups) {
         // Add category header row
-        const categoryRow = trackingTable.insertRow();
+        const categoryRow = tableBody.insertRow();
         categoryRow.className = 'task-category';
         const categoryCell = categoryRow.insertCell(0);
         categoryCell.colSpan = 7;
@@ -1791,7 +2043,7 @@
           for (const subtaskId in taskInfo.subtasks) {
             const subtaskName = taskInfo.subtasks[subtaskId];
             
-            const subtaskRow = trackingTable.insertRow();
+            const subtaskRow = tableBody.insertRow();
             subtaskRow.className = 'subtask-row';
             subtaskRow.setAttribute('data-parent', taskInfo.id);
             subtaskRow.dataset.taskId = taskInfo.id;
