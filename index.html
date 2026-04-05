@@ -4,34 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BASKETBALL TOURNAMENT TASKS SIGN UP FORM</title>
-  <!-- Firebase App (core) -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <!-- Firebase Realtime Database -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-  <!-- Firebase Storage (for potential attachments) -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
-  
-  <script>
-    // Firebase configuration (replace with your own credentials)
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "your-project.firebaseapp.com",
-      databaseURL: "https://your-project-default-rtdb.firebaseio.com",
-      projectId: "your-project",
-      storageBucket: "your-project.appspot.com",
-      messagingSenderId: "your-messaging-sender-id",
-      appId: "your-app-id"
-    };
-    
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    
-    // Database reference
-    const database = firebase.database();
-    // Storage reference
-    const storage = firebase.storage();
-  </script>
-  
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -620,8 +592,6 @@
     
     <label for="title">Title (student, teacher, etc) <span class="required-label">*</span></label>
     <input type="text" id="title" required>
-    
-    <button id="save-user-info" class="action-btn">Save User Info</button>
   </div>
   
   <!-- New Tab Container Positioned Before Tasks -->
@@ -960,6 +930,11 @@
     
     // Store expanded state for task categories
     let expandedTasks = {};
+    
+    // Local storage for tasks (simulating a database)
+    let taskDatabase = [];
+    let taskHistory = [];
+    let commentDatabase = [];
 
     // Function to save user info
     function saveUserInfo() {
@@ -968,7 +943,7 @@
       
       if (!name || !title) {
         alert('Name and title are required');
-        return;
+        return false;
       }
       
       // Determine role based on title
@@ -995,13 +970,7 @@
         userDisplay.innerHTML = `User: <strong>${name}</strong> (${title})`;
       }
       
-      // Set up real-time listeners
-      setupRealtimeListeners();
-      
-      // Initialize tracking tab
-      initializeTrackingTab();
-      
-      alert('User information saved!');
+      return true;
     }
 
     // Function to change user
@@ -1019,7 +988,7 @@
         userDisplay.innerHTML = '';
       }
       
-      alert('Please enter your name and title, then click "Save User Info"');
+      alert('Please enter your name and title before registering for tasks.');
     }
     
     // New Tab functionality
@@ -1189,69 +1158,44 @@
     
     // Function to get assigned users with their roles
     function getAllAssignedPeopleWithRoles(taskId, subtaskId) {
-      return new Promise((resolve, reject) => {
-        database.ref('tasks')
-          .orderByChild('taskId')
-          .equalTo(taskId)
-          .once('value')
-          .then(snapshot => {
-            const users = [];
-            snapshot.forEach(childSnapshot => {
-              const task = childSnapshot.val();
-              if (task.subtaskId === subtaskId) {
-                users.push({
-                  name: task.name,
-                  role: task.userRole || (task.title && (task.title.toLowerCase().includes('teacher') ? 'teacher' : 'student'))
-                });
-              }
-            });
-            resolve(users);
-          })
-          .catch(error => {
-            console.error("Error retrieving users:", error);
-            reject(error);
+      const users = [];
+      
+      taskDatabase.forEach(task => {
+        if (task.taskId === taskId && task.subtaskId === subtaskId) {
+          users.push({
+            name: task.name,
+            role: task.userRole || (task.title && (task.title.toLowerCase().includes('teacher') ? 'teacher' : 'student'))
           });
+        }
       });
+      
+      return users;
     }
     
-    // Function to save task registration in Firebase
+    // Function to save task registration
     function saveTaskRegistration(taskData) {
-      if (!currentUser) return Promise.reject("No user logged in");
-      
-      const batch = [];
+      if (!currentUser) return false;
       
       taskData.forEach(task => {
         // Add user ID and timestamp
         task.userId = currentUser.uid;
         task.userRole = currentUser.role;
-        task.createdAt = firebase.database.ServerValue.TIMESTAMP;
+        task.createdAt = Date.now();
+        task.id = Date.now() + Math.random().toString(36).substring(2, 15);
         
-        // Create new entry in database
-        const newTaskRef = database.ref('tasks').push();
-        batch.push(newTaskRef.set(task));
+        // Add to database
+        taskDatabase.push(task);
       });
       
-      return Promise.all(batch);
+      // Save to localStorage
+      localStorage.setItem('taskDatabase', JSON.stringify(taskDatabase));
+      
+      return true;
     }
 
-    // Function to get all tasks from Firebase
+    // Function to get all tasks
     function getRegisteredTasks() {
-      return new Promise((resolve, reject) => {
-        database.ref('tasks').once('value')
-          .then(snapshot => {
-            const tasks = [];
-            snapshot.forEach(childSnapshot => {
-              const task = childSnapshot.val();
-              task.id = childSnapshot.key; // Add task ID
-              tasks.push(task);
-            });
-            resolve(tasks);
-          })
-          .catch(error => {
-            console.error("Error retrieving tasks:", error);
-            reject(error);
-          });
-      });
+      return taskDatabase;
     }
     
     // Function to collect task data from selected tasks
@@ -1342,110 +1286,102 @@
     
     // Function to get all people assigned to a specific task/subtask
     function getAllAssignedPeople(taskId, subtaskId) {
-      return new Promise((resolve, reject) => {
-        database.ref('tasks')
-          .orderByChild('taskId')
-          .equalTo(taskId)
-          .once('value')
-          .then(snapshot => {
-            const names = [];
-            snapshot.forEach(childSnapshot => {
-              const task = childSnapshot.val();
-              if (task.subtaskId === subtaskId) {
-                names.push(task.name);
-              }
-            });
-            resolve([...new Set(names)]); // Return unique names
-          })
-          .catch(error => {
-            console.error("Error getting assigned people:", error);
-            reject(error);
-          });
+      const names = [];
+      
+      taskDatabase.forEach(task => {
+        if (task.taskId === taskId && task.subtaskId === subtaskId) {
+          names.push(task.name);
+        }
       });
+      
+      // Return unique names
+      return [...new Set(names)];
     }
     
     // Function to check if a task/subtask has any assignees
     function hasAssignees(taskId, subtaskId) {
-      return getAllAssignedPeople(taskId, subtaskId)
-        .then(assignees => assignees.length > 0)
-        .catch(() => false);
+      return getAllAssignedPeople(taskId, subtaskId).length > 0;
     }
     
     // Function to update task status
     function updateTaskStatus(taskId, subtaskId, status) {
       if (!currentUser) {
-        alert("Please save your user information before updating task status.");
+        alert("Please enter your name and title before updating task status.");
         return;
       }
       
-      // Find the task in Firebase
-      database.ref('tasks').orderByChild('taskId').equalTo(taskId).once('value')
-        .then(snapshot => {
-          snapshot.forEach(childSnapshot => {
-            const task = childSnapshot.val();
+      // Find the task in the database
+      taskDatabase.forEach(task => {
+        if (task.taskId === taskId && task.subtaskId === subtaskId) {
+          // Check permissions
+          if (currentUser.role === 'teacher' || task.userId === currentUser.uid) {
+            // Update status
+            task.status = status;
+            task.lastUpdated = Date.now();
+            task.lastUpdatedBy = currentUser.uid;
             
-            // Check if it's the right subtask
-            if (task.subtaskId === subtaskId) {
-              // Check permissions
-              if (currentUser.role === 'teacher' || task.userId === currentUser.uid) {
-                // Update status
-                database.ref('tasks/' + childSnapshot.key).update({
-                  status: status,
-                  lastUpdated: firebase.database.ServerValue.TIMESTAMP,
-                  lastUpdatedBy: currentUser.uid
-                });
-                
-                // Add to history
-                database.ref('taskHistory').push({
-                  taskId: taskId,
-                  subtaskId: subtaskId,
-                  status: status,
-                  timestamp: firebase.database.ServerValue.TIMESTAMP,
-                  userId: currentUser.uid,
-                  userName: currentUser.name
-                });
-              } else {
-                alert("You can only update your own tasks.");
-              }
-            }
-          });
-        });
+            // Add to history
+            taskHistory.push({
+              taskId: taskId,
+              subtaskId: subtaskId,
+              status: status,
+              timestamp: Date.now(),
+              userId: currentUser.uid,
+              userName: currentUser.name
+            });
+            
+            // Save to localStorage
+            localStorage.setItem('taskDatabase', JSON.stringify(taskDatabase));
+            localStorage.setItem('taskHistory', JSON.stringify(taskHistory));
+            
+            // Update the tracking table
+            updateTaskInTrackingTable(task);
+          } else {
+            alert("You can only update your own tasks.");
+          }
+        }
+      });
     }
 
     // Function to remove a task
     function removeTask(taskId, subtaskId) {
       if (!currentUser) {
-        alert("Please save your user information before removing tasks.");
+        alert("Please enter your name and title before removing tasks.");
         return;
       }
       
-      database.ref('tasks').orderByChild('taskId').equalTo(taskId).once('value')
-        .then(snapshot => {
-          snapshot.forEach(childSnapshot => {
-            const task = childSnapshot.val();
+      // Find the task in the database
+      for (let i = 0; i < taskDatabase.length; i++) {
+        const task = taskDatabase[i];
+        
+        if (task.taskId === taskId && task.subtaskId === subtaskId) {
+          // Check permissions
+          if (currentUser.role === 'teacher' || task.userId === currentUser.uid) {
+            // Remove the task
+            taskDatabase.splice(i, 1);
+            i--; // Adjust index after removal
             
-            // Check if it's the right subtask
-            if (task.subtaskId === subtaskId) {
-              // Check permissions
-              if (currentUser.role === 'teacher' || task.userId === currentUser.uid) {
-                // Delete the task
-                database.ref('tasks/' + childSnapshot.key).remove();
-                
-                // Add to history
-                database.ref('taskHistory').push({
-                  taskId: taskId,
-                  subtaskId: subtaskId,
-                  action: 'removed',
-                  timestamp: firebase.database.ServerValue.TIMESTAMP,
-                  userId: currentUser.uid,
-                  userName: currentUser.name
-                });
-              } else {
-                alert("You can only delete your own tasks.");
-              }
-            }
-          });
-        });
+            // Add to history
+            taskHistory.push({
+              taskId: taskId,
+              subtaskId: subtaskId,
+              action: 'removed',
+              timestamp: Date.now(),
+              userId: currentUser.uid,
+              userName: currentUser.name
+            });
+            
+            // Save to localStorage
+            localStorage.setItem('taskDatabase', JSON.stringify(taskDatabase));
+            localStorage.setItem('taskHistory', JSON.stringify(taskHistory));
+          } else {
+            alert("You can only delete your own tasks.");
+          }
+        }
+      }
+      
+      // Refresh the tracking table
+      initializeTrackingTable();
     }
     
     // Function to update a task in the tracking table
@@ -1466,54 +1402,42 @@
         const row = subtaskRows[i];
         if (row.dataset.subtaskId === subtaskId) {
           // Get all people assigned to this micro-task
-          getAllAssignedPeople(taskId, subtaskId).then(assignedPeople => {
-            // Update the cell with all assigned people - now with bold formatting
-            if (assignedPeople.length > 0) {
-              row.cells[2].innerHTML = `<span class="assigned-user">${assignedPeople.join(', ')}</span>`;
-            } else {
-              row.cells[2].innerHTML = `<span class="not-assigned">Not assigned yet</span>`;
-            }
-            
-            // Update deadline
-            if (task.deadline) {
-              row.cells[3].textContent = task.deadline;
-            }
-            
-            // Update time if provided
-            if (task.reminderTime) {
-              row.cells[4].textContent = task.reminderTime;
-            }
-            
-            // Update status with an embedded selector
-            row.cells[5].innerHTML = `
-              <select class="status-select status-${status}" onchange="updateTaskStatus('${taskId}', '${subtaskId}', this.value)">
-                <option value="not-started" ${status === 'not-started' ? 'selected' : ''}>Not started</option>
-                <option value="in-progress" ${status === 'in-progress' ? 'selected' : ''}>In progress</option>
-                <option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option>
-              </select>
-            `;
-            
-            // Update actions - show remove button only if subtask has assignees
-            hasAssignees(taskId, subtaskId).then(hasAssigneesForSubtask => {
-              row.cells[6].innerHTML = `
-                <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
-                <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
-                <button class="action-btn" onclick="viewTaskHistory('${taskId}', '${subtaskId}')">History</button>
-                ${hasAssigneesForSubtask ? `<button class="action-btn remove-btn" onclick="removeTask('${taskId}', '${subtaskId}')">Remove</button>` : ''}
-              `;
-            });
-            
-            // Restore expanded state if it was previously expanded
-            if (expandedTasks[taskId]) {
-              const mainTaskRows = document.querySelectorAll(`tr.main-task[data-task-id="${taskId}"]`);
-              mainTaskRows.forEach(mainRow => {
-                const expandBtn = mainRow.querySelector('.expand-btn');
-                if (expandBtn && expandBtn.textContent === '+') {
-                  expandBtn.click();
-                }
-              });
-            }
-          });
+          const assignedPeople = getAllAssignedPeople(taskId, subtaskId);
+          
+          // Update the cell with all assigned people - now with bold formatting
+          if (assignedPeople.length > 0) {
+            row.cells[2].innerHTML = `<span class="assigned-user">${assignedPeople.join(', ')}</span>`;
+          } else {
+            row.cells[2].innerHTML = `<span class="not-assigned">Not assigned yet</span>`;
+          }
+          
+          // Update deadline
+          if (task.deadline) {
+            row.cells[3].textContent = task.deadline;
+          }
+          
+          // Update time if provided
+          if (task.reminderTime) {
+            row.cells[4].textContent = task.reminderTime;
+          }
+          
+          // Update status with an embedded selector
+          row.cells[5].innerHTML = `
+            <select class="status-select status-${status}" onchange="updateTaskStatus('${taskId}', '${subtaskId}', this.value)">
+              <option value="not-started" ${status === 'not-started' ? 'selected' : ''}>Not started</option>
+              <option value="in-progress" ${status === 'in-progress' ? 'selected' : ''}>In progress</option>
+              <option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option>
+            </select>
+          `;
+          
+          // Update actions - show remove button only if subtask has assignees
+          const hasAssigneesForSubtask = hasAssignees(taskId, subtaskId);
+          row.cells[6].innerHTML = `
+            <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
+            <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
+            <button class="action-btn" onclick="viewTaskHistory('${taskId}', '${subtaskId}')">History</button>
+            ${hasAssigneesForSubtask ? `<button class="action-btn remove-btn" onclick="removeTask('${taskId}', '${subtaskId}')">Remove</button>` : ''}
+          `;
           
           break;
         }
@@ -1531,28 +1455,27 @@
       currentTaskId = taskId;
       currentSubtaskId = subtaskId;
       
-      getAllAssignedPeople(taskId, subtaskId).then(assignees => {
-        const assigneeList = document.getElementById('assignee-list');
-        
-        assigneeList.innerHTML = '';
-        
-        if (assignees.length > 0) {
-          const ul = document.createElement('ul');
-          assignees.forEach(name => {
-            const li = document.createElement('li');
-            li.textContent = name;
-            ul.appendChild(li);
-          });
-          assigneeList.appendChild(ul);
-        } else {
-          assigneeList.textContent = 'No one is assigned to this task yet.';
-        }
-        
-        // Load comments
-        loadComments(taskId, subtaskId);
-        
-        document.getElementById('assignees-modal').style.display = 'flex';
-      });
+      const assignees = getAllAssignedPeople(taskId, subtaskId);
+      const assigneeList = document.getElementById('assignee-list');
+      
+      assigneeList.innerHTML = '';
+      
+      if (assignees.length > 0) {
+        const ul = document.createElement('ul');
+        assignees.forEach(name => {
+          const li = document.createElement('li');
+          li.textContent = name;
+          ul.appendChild(li);
+        });
+        assigneeList.appendChild(ul);
+      } else {
+        assigneeList.textContent = 'No one is assigned to this task yet.';
+      }
+      
+      // Load comments
+      loadComments(taskId, subtaskId);
+      
+      document.getElementById('assignees-modal').style.display = 'flex';
     }
     
     // Function to load comments
@@ -1560,99 +1483,87 @@
       const commentsContainer = document.getElementById('comments-container');
       commentsContainer.innerHTML = '<p>Loading comments...</p>';
       
-      database.ref('comments')
-        .orderByChild('taskIdentifier')
-        .equalTo(`${taskId}_${subtaskId}`)
-        .once('value')
-        .then(snapshot => {
-          commentsContainer.innerHTML = '';
+      // Filter comments for this task
+      const taskComments = commentDatabase.filter(comment => 
+        comment.taskId === taskId && comment.subtaskId === subtaskId
+      );
+      
+      // Sort comments by date
+      taskComments.sort((a, b) => a.timestamp - b.timestamp);
+      
+      if (taskComments.length === 0) {
+        commentsContainer.innerHTML = '<p>No comments yet.</p>';
+      } else {
+        commentsContainer.innerHTML = '';
+        
+        taskComments.forEach(comment => {
+          const commentElement = document.createElement('div');
+          commentElement.className = 'comment';
           
-          const comments = [];
-          snapshot.forEach(childSnapshot => {
-            comments.push({
-              id: childSnapshot.key,
-              ...childSnapshot.val()
-            });
-          });
-          
-          // Sort comments by date
-          comments.sort((a, b) => a.timestamp - b.timestamp);
-          
-          if (comments.length === 0) {
-            commentsContainer.innerHTML = '<p>No comments yet.</p>';
-          } else {
-            comments.forEach(comment => {
-              const commentElement = document.createElement('div');
-              commentElement.className = 'comment';
-              
-              const isCurrentUser = comment.userId === currentUser?.uid;
-              if (isCurrentUser) {
-                commentElement.classList.add('own-comment');
-              }
-              
-              commentElement.innerHTML = `
-                <div class="comment-header">
-                  <strong>${comment.userName}</strong>
-                  <span class="comment-date">${new Date(comment.timestamp).toLocaleString()}</span>
-                </div>
-                <div class="comment-body">${comment.text}</div>
-              `;
-              
-              commentsContainer.appendChild(commentElement);
-            });
+          const isCurrentUser = comment.userId === currentUser?.uid;
+          if (isCurrentUser) {
+            commentElement.classList.add('own-comment');
           }
-        })
-        .catch(error => {
-          console.error("Error loading comments:", error);
-          commentsContainer.innerHTML = '<p>Error loading comments.</p>';
+          
+          commentElement.innerHTML = `
+            <div class="comment-header">
+              <strong>${comment.userName}</strong>
+              <span class="comment-date">${new Date(comment.timestamp).toLocaleString()}</span>
+            </div>
+            <div class="comment-body">${comment.text}</div>
+          `;
+          
+          commentsContainer.appendChild(commentElement);
         });
+      }
     }
 
     // Function to post a comment
     function postComment() {
       if (!currentUser) {
-        alert("Please save your user information before adding a comment.");
+        alert("Please enter your name and title before adding a comment.");
         return;
       }
       
       const commentText = document.getElementById('new-comment').value.trim();
       if (!commentText) return;
       
-      // Get task name for notifications
+      // Get task name
       let taskName = "";
-      database.ref('tasks').orderByChild('taskId').equalTo(currentTaskId).once('value')
-        .then(snapshot => {
-          snapshot.forEach(childSnapshot => {
-            const task = childSnapshot.val();
-            if (task.subtaskId === currentSubtaskId) {
-              taskName = task.subtaskName || "main task";
-            }
-          });
-          
-          // Create comment
-          return database.ref('comments').push({
-            taskId: currentTaskId,
-            subtaskId: currentSubtaskId,
-            taskIdentifier: `${currentTaskId}_${currentSubtaskId}`, // For easier queries
-            taskName: taskName,
-            text: commentText,
-            userId: currentUser.uid,
-            userName: currentUser.name,
-            userRole: currentUser.role,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
-          });
-        })
-        .then(() => {
-          // Clear text field
-          document.getElementById('new-comment').value = '';
-          
-          // Reload comments
-          loadComments(currentTaskId, currentSubtaskId);
-        })
-        .catch(error => {
-          console.error("Error posting comment:", error);
-          alert("Error posting comment.");
-        });
+      taskDatabase.forEach(task => {
+        if (task.taskId === currentTaskId && task.subtaskId === currentSubtaskId) {
+          taskName = task.subtaskName || "main task";
+        }
+      });
+      
+      // Create comment
+      const newComment = {
+        id: Date.now() + Math.random().toString(36).substring(2, 15),
+        taskId: currentTaskId,
+        subtaskId: currentSubtaskId,
+        taskIdentifier: `${currentTaskId}_${currentSubtaskId}`,
+        taskName: taskName,
+        text: commentText,
+        userId: currentUser.uid,
+        userName: currentUser.name,
+        userRole: currentUser.role,
+        timestamp: Date.now()
+      };
+      
+      // Add to database
+      commentDatabase.push(newComment);
+      
+      // Save to localStorage
+      localStorage.setItem('commentDatabase', JSON.stringify(commentDatabase));
+      
+      // Clear text field
+      document.getElementById('new-comment').value = '';
+      
+      // Reload comments
+      loadComments(currentTaskId, currentSubtaskId);
+      
+      // Show notification
+      showNotification(`Comment added to task "${taskName}"`);
     }
     
     // Function to close the modal
@@ -1665,75 +1576,63 @@
       const historyContainer = document.getElementById('history-container');
       historyContainer.innerHTML = '<p>Loading history...</p>';
       
-      database.ref('taskHistory')
-        .orderByChild('timestamp')
-        .once('value')
-        .then(snapshot => {
-          historyContainer.innerHTML = '';
+      // Filter history items for this task
+      const historyItems = taskHistory.filter(item => 
+        item.taskId === taskId && item.subtaskId === subtaskId
+      );
+      
+      // Sort by date (most recent first)
+      historyItems.sort((a, b) => b.timestamp - a.timestamp);
+      
+      if (historyItems.length === 0) {
+        historyContainer.innerHTML = '<p>No history available for this task.</p>';
+      } else {
+        historyContainer.innerHTML = '';
+        
+        const table = document.createElement('table');
+        table.className = 'history-table';
+        
+        // Table header
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+          <tr>
+            <th>Date</th>
+            <th>User</th>
+            <th>Action</th>
+          </tr>
+        `;
+        table.appendChild(thead);
+        
+        // Table body
+        const tbody = document.createElement('tbody');
+        historyItems.forEach(item => {
+          const row = document.createElement('tr');
           
-          const historyItems = [];
-          snapshot.forEach(childSnapshot => {
-            const item = childSnapshot.val();
-            if (item.taskId === taskId && item.subtaskId === subtaskId) {
-              historyItems.push(item);
-            }
-          });
+          // Format date
+          const date = new Date(item.timestamp).toLocaleString();
           
-          // Sort by date (most recent first)
-          historyItems.sort((a, b) => b.timestamp - a.timestamp);
-          
-          if (historyItems.length === 0) {
-            historyContainer.innerHTML = '<p>No history available for this task.</p>';
-          } else {
-            const table = document.createElement('table');
-            table.className = 'history-table';
-            
-            // Table header
-            const thead = document.createElement('thead');
-            thead.innerHTML = `
-              <tr>
-                <th>Date</th>
-                <th>User</th>
-                <th>Action</th>
-              </tr>
-            `;
-            table.appendChild(thead);
-            
-            // Table body
-            const tbody = document.createElement('tbody');
-            historyItems.forEach(item => {
-              const row = document.createElement('tr');
-              
-              // Format date
-              const date = new Date(item.timestamp).toLocaleString();
-              
-              // Determine action
-              let action = '';
-              if (item.action === 'removed') {
-                action = 'Task removed';
-              } else if (item.status) {
-                action = `Status changed to "${item.status.replace('-', ' ')}"`;
-              }
-              
-              row.innerHTML = `
-                <td>${date}</td>
-                <td>${item.userName}</td>
-                <td>${action}</td>
-              `;
-              
-              tbody.appendChild(row);
-            });
-            
-            table.appendChild(tbody);
-            historyContainer.appendChild(table);
+          // Determine action
+          let action = '';
+          if (item.action === 'removed') {
+            action = 'Task removed';
+          } else if (item.status) {
+            action = `Status changed to "${item.status.replace('-', ' ')}"`;
           }
           
-          document.getElementById('history-modal').style.display = 'flex';
-        })
-        .catch(error => {
-          console.error("Error loading history:", error);
-          historyContainer.innerHTML = '<p>Error loading history.</p>';
+          row.innerHTML = `
+            <td>${date}</td>
+            <td>${item.userName}</td>
+            <td>${action}</td>
+          `;
+          
+          tbody.appendChild(row);
         });
+        
+        table.appendChild(tbody);
+        historyContainer.appendChild(table);
+      }
+      
+      document.getElementById('history-modal').style.display = 'flex';
     }
 
     // Function to close history modal
@@ -1755,24 +1654,6 @@
       openNewTab('tracking');
     }
     
-    // Listen for real-time changes
-    function setupRealtimeListeners() {
-      // Listen for new tasks or modifications
-      database.ref('tasks').on('value', (snapshot) => {
-        // Update tracking table
-        initializeTrackingTable();
-      });
-      
-      // Listen for new comments
-      database.ref('comments').on('child_added', (snapshot) => {
-        const comment = snapshot.val();
-        // Show notification for new comments
-        if (comment.userId !== currentUser?.uid) {
-          showNotification(`New comment from ${comment.userName} on task "${comment.taskName}"`);
-        }
-      });
-    }
-
     // Function to show notification
     function showNotification(message) {
       const notification = document.createElement('div');
@@ -1826,7 +1707,7 @@
             'subtask3-1': 'Dismantle game fair booths',
             'subtask3-2': 'Clean the gymnasium floor',
             'subtask3-3': 'Return sports equipment',
-            'subtask3-4': 'Clean the canteen area',
+             'subtask3-4': 'Clean the canteen area',
             'subtask3-5': 'Remove signage and decorations',
             'subtask3-6': 'Final verification of spaces'
           }
@@ -1857,10 +1738,10 @@
             'subtask6-1': 'Draft thank you messages',
             'subtask6-2': 'Identify all contributors',
             'subtask6-3': 'Send thank you communications'
-              }
+          }
         },
         'task7': { 
-        name: 'Final Event Report', 
+          name: 'Final Event Report', 
           category: 'Tasks After the Event', 
           subtasks: {
             'subtask7-1': 'Gather information from all teams',
@@ -1940,12 +1821,9 @@
       }
       
       // Update statuses of registered tasks
-      getRegisteredTasks().then(registeredTasks => {
-        registeredTasks.forEach(task => {
-          updateTaskInTrackingTable(task);
-        });
-      }).catch(error => {
-        console.error("Error getting registered tasks:", error);
+      const registeredTasks = getRegisteredTasks();
+      registeredTasks.forEach(task => {
+        updateTaskInTrackingTable(task);
       });
     }
     
@@ -1960,12 +1838,31 @@
             const taskId = btn.closest('tr').dataset.taskId;
             expandedTasks[taskId] = (btn.textContent === '-');
           });
+          
+          // Refresh the tracking table
+          initializeTrackingTable();
         }
       }, 30000); // 30 seconds
     }
     
     // Initialize tracking tab
     function initializeTrackingTab() {
+      // Load data from localStorage
+      const savedTasks = localStorage.getItem('taskDatabase');
+      if (savedTasks) {
+        taskDatabase = JSON.parse(savedTasks);
+      }
+      
+      const savedHistory = localStorage.getItem('taskHistory');
+      if (savedHistory) {
+        taskHistory = JSON.parse(savedHistory);
+      }
+      
+      const savedComments = localStorage.getItem('commentDatabase');
+      if (savedComments) {
+        commentDatabase = JSON.parse(savedComments);
+      }
+      
       initializeTrackingTable();
       filterTasks(); // Apply initial filters
     }
@@ -1987,23 +1884,19 @@
         document.getElementById('name').value = currentUser.name;
         document.getElementById('title').value = currentUser.title;
         
-        // Set up real-time listeners
-        setupRealtimeListeners();
-        
         // Initialize tracking tab
         initializeTrackingTab();
       }
-      
-      // Add event listener to save user info button
-      document.getElementById('save-user-info').addEventListener('click', saveUserInfo);
       
       // Set up registration button
       const registerBtn = document.getElementById('register-btn');
       if (registerBtn) {
         registerBtn.addEventListener('click', function() {
+          // Save user info first if not already saved
           if (!currentUser) {
-            alert("Please save your user information before registering for tasks.");
-            return;
+            if (!saveUserInfo()) {
+              return; // Stop if user info couldn't be saved
+            }
           }
           
           // Validate form
@@ -2022,19 +1915,16 @@
           // Collect task data
           const taskData = collectTaskData(selectedTasks);
           
-          // Save tasks in Firebase
-          saveTaskRegistration(taskData)
-            .then(() => {
-              // Show confirmation
-              showConfirmationModal('Your task registration has been submitted successfully!');
-              
-              // Reset form
-              resetRegistrationForm();
-            })
-            .catch(error => {
-              console.error("Error registering tasks:", error);
-              alert("An error occurred while registering tasks.");
-            });
+          // Save tasks
+          if (saveTaskRegistration(taskData)) {
+            // Show confirmation
+            showConfirmationModal('Your task registration has been submitted successfully!');
+            
+            // Reset form
+            resetRegistrationForm();
+          } else {
+            alert("An error occurred while registering tasks.");
+          }
         });
       }
       
