@@ -631,6 +631,12 @@
   <h1>BASKETBALL TOURNAMENT TASKS SIGN UP FORM</h1>
   <h2 class="subtitle">Register for 1 Task or more</h2>
   
+  <!-- User Controls -->
+  <div class="user-controls">
+    <span id="current-user-display" class="user-display"></span>
+    <button onclick="logout()">Logout</button>
+  </div>
+  
   <!-- Event Information -->
   <div class="event-info">
     <p><strong>Event Date:</strong> In May 2026</p>
@@ -977,9 +983,29 @@
     </div>
   </div>
   
+  <!-- Simplified Authentication Modal -->
+  <div id="auth-modal" class="modal">
+    <div class="modal-content">
+      <h3>Welcome to the Basketball Tournament Task Signup</h3>
+      
+      <div id="simple-login-form">
+        <label for="login-name">First Name or Nickname <span class="required-label">*</span></label>
+        <input type="text" id="login-name" required>
+        
+        <label for="login-title">Title (student, teacher, etc.) <span class="required-label">*</span></label>
+        <input type="text" id="login-title" required>
+        
+        <button id="login-btn" class="submit-btn">Continue</button>
+      </div>
+      
+      <div id="auth-error" class="error-message"></div>
+    </div>
+  </div>
+  
   <script>
     // Variables for current user
     let currentUser = null;
+    let userRole = "student"; // Default
     
     // Variables for comment system
     let currentTaskId = '';
@@ -988,10 +1014,137 @@
     // Store expanded state for task categories
     let expandedTasks = {};
 
-    // Function to get current user's role
-    function getUserRole() {
-      const title = document.getElementById('title').value.toLowerCase();
-      return (title.includes('teacher') || title.includes('prof')) ? 'teacher' : 'student';
+    // Function to show authentication modal
+    function showAuthModal() {
+      document.getElementById('auth-modal').style.display = 'flex';
+    }
+
+    // Function to hide authentication modal
+    function hideAuthModal() {
+      document.getElementById('auth-modal').style.display = 'none';
+    }
+
+    // Handle simplified login
+    document.getElementById('login-btn').addEventListener('click', function() {
+      const name = document.getElementById('login-name').value.trim();
+      const title = document.getElementById('login-title').value.trim();
+      
+      const authError = document.getElementById('auth-error');
+      
+      if (!name || !title) {
+        authError.textContent = 'Name and title are required';
+        authError.style.display = 'block';
+        return;
+      }
+      
+      // Determine role based on title
+      let role = "student";
+      if (title.toLowerCase().includes('teacher') || 
+          title.toLowerCase().includes('prof')) {
+        role = "teacher";
+      }
+      
+      // Create a simple user object
+      currentUser = {
+        uid: Date.now().toString(), // Generate a simple unique ID
+        name: name,
+        title: title,
+        role: role
+      };
+      
+      // Store in localStorage for persistence across page refreshes
+      localStorage.setItem('basketballTaskUser', JSON.stringify(currentUser));
+      
+      userRole = role;
+      
+      // Update user display
+      const userDisplay = document.getElementById('current-user-display');
+      if (userDisplay) {
+        userDisplay.innerHTML = `User: <strong>${name}</strong> (${title})`;
+      }
+      
+      // Pre-fill form fields
+      document.getElementById('name').value = name;
+      document.getElementById('title').value = title;
+      
+      hideAuthModal();
+      
+      // Set up real-time listeners
+      setupRealtimeListeners();
+      
+      // Initialize tracking tab
+      initializeTrackingTab();
+    });
+
+    // Check for existing user on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      const savedUser = localStorage.getItem('basketballTaskUser');
+      if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        userRole = currentUser.role;
+        
+        // Update user display
+        const userDisplay = document.getElementById('current-user-display');
+        if (userDisplay) {
+          userDisplay.innerHTML = `User: <strong>${currentUser.name}</strong> (${currentUser.title})`;
+        }
+        
+        // Pre-fill form fields
+        document.getElementById('name').value = currentUser.name;
+        document.getElementById('title').value = currentUser.title;
+        
+        // Hide the auth modal
+        hideAuthModal();
+        
+        // Set up real-time listeners
+        setupRealtimeListeners();
+        
+        // Initialize tracking tab
+        initializeTrackingTab();
+      } else {
+        // Show the auth modal if no user is found
+        showAuthModal();
+      }
+    });
+
+    // Function to logout
+    function logout() {
+      localStorage.removeItem('basketballTaskUser');
+      currentUser = null;
+      userRole = "student";
+      
+      // Clear form fields
+      document.getElementById('name').value = '';
+      document.getElementById('title').value = '';
+      
+      // Update user display
+      const userDisplay = document.getElementById('current-user-display');
+      if (userDisplay) {
+        userDisplay.innerHTML = '';
+      }
+      
+      showAuthModal();
+    }
+    
+    // Function to get current user
+    function getCurrentUser() {
+      if (currentUser) {
+        return currentUser.name;
+      }
+      return null;
+    }
+    
+    // Function to get current user's title
+    function getUserTitle() {
+      if (currentUser) {
+        return currentUser.title;
+      }
+      return '';
+    }
+    
+    // Function to check if user is a teacher
+    function isTeacher() {
+      return userRole === 'teacher';
     }
     
     // New Tab functionality
@@ -1012,13 +1165,22 @@
       if (tabName === 'tracking') {
         initializeTrackingTab();
       }
+      
+      // Reset registration form when switching to registration tab
+      if (tabName === 'registration') {
+        resetRegistrationForm();
+      }
     }
     
     // Function to reset registration form
     function resetRegistrationForm() {
-      // Keep name and title
-      const currentName = document.getElementById('name').value;
-      const currentTitle = document.getElementById('title').value;
+      // Don't clear name field anymore - keep the current user's name
+      const currentUserName = getCurrentUser();
+      document.getElementById('name').value = currentUserName || '';
+      
+      // Keep the title if it exists
+      const userTitle = getUserTitle();
+      document.getElementById('title').value = userTitle || '';
       
       // Uncheck all task checkboxes
       document.querySelectorAll('.task-checkbox').forEach(checkbox => {
@@ -1042,10 +1204,6 @@
       
       // Hide error message
       document.getElementById('error-message').style.display = 'none';
-      
-      // Restore name and title
-      document.getElementById('name').value = currentName;
-      document.getElementById('title').value = currentTitle;
     }
     
     // Function to toggle visibility of subtasks
@@ -1160,10 +1318,14 @@
     
     // Function to save task registration in Firebase
     function saveTaskRegistration(taskData) {
+      if (!currentUser) return;
+      
       const batch = [];
       
       taskData.forEach(task => {
-        // Add timestamp
+        // Add user ID and timestamp
+        task.userId = currentUser.uid;
+        task.userRole = currentUser.role;
         task.createdAt = firebase.database.ServerValue.TIMESTAMP;
         
         // Create new entry in database
@@ -1199,7 +1361,6 @@
       const taskData = [];
       const name = document.getElementById('name').value;
       const title = document.getElementById('title').value;
-      const userRole = getUserRole();
       
       selectedTasks.forEach(taskCheckbox => {
         const taskId = taskCheckbox.value;
@@ -1229,17 +1390,12 @@
         const notesTextarea = taskGroup.querySelector(`textarea[id="${taskId}-notes"]`);
         const notes = notesTextarea ? notesTextarea.value : '';
         
-        // Create a unique user ID based on name and timestamp
-        const userId = `${name.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}`;
-        
         taskData.push({
           taskId: taskId,
           subtaskId: subtaskId,
           subtaskName: subtaskName,
           name: name,
           title: title,
-          userRole: userRole,
-          userId: userId,
           deadline: deadline,
           reminderDate: reminderDate,
           reminderTime: reminderTime,
@@ -1315,15 +1471,10 @@
     
     // Function to update task status
     function updateTaskStatus(taskId, subtaskId, status) {
-      const name = document.getElementById('name').value.trim();
-      const title = document.getElementById('title').value.trim();
-      
-      if (!name || !title) {
-        alert("Please enter your name and title before updating task status.");
+      if (!currentUser) {
+        alert("Please log in to update task status.");
         return;
       }
-      
-      const userRole = getUserRole();
       
       // Find the task in Firebase
       database.ref('tasks').orderByChild('taskId').equalTo(taskId).once('value')
@@ -1333,13 +1484,13 @@
             
             // Check if it's the right subtask
             if (task.subtaskId === subtaskId) {
-              // Check permissions - teachers can update any task, students only their own
-              if (userRole === 'teacher' || task.name === name) {
+              // Check permissions
+              if (currentUser.role === 'teacher' || task.userId === currentUser.uid) {
                 // Update status
                 database.ref('tasks/' + childSnapshot.key).update({
                   status: status,
                   lastUpdated: firebase.database.ServerValue.TIMESTAMP,
-                  lastUpdatedBy: name
+                  lastUpdatedBy: currentUser.uid
                 });
                 
                 // Add to history
@@ -1348,7 +1499,8 @@
                   subtaskId: subtaskId,
                   status: status,
                   timestamp: firebase.database.ServerValue.TIMESTAMP,
-                  userName: name
+                  userId: currentUser.uid,
+                  userName: currentUser.name
                 });
               } else {
                 alert("You can only update your own tasks.");
@@ -1360,15 +1512,10 @@
 
     // Function to remove a task
     function removeTask(taskId, subtaskId) {
-      const name = document.getElementById('name').value.trim();
-      const title = document.getElementById('title').value.trim();
-      
-      if (!name || !title) {
-        alert("Please enter your name and title before removing tasks.");
+      if (!currentUser) {
+        alert("Please log in to delete tasks.");
         return;
       }
-      
-      const userRole = getUserRole();
       
       database.ref('tasks').orderByChild('taskId').equalTo(taskId).once('value')
         .then(snapshot => {
@@ -1377,8 +1524,8 @@
             
             // Check if it's the right subtask
             if (task.subtaskId === subtaskId) {
-              // Check permissions - teachers can remove any task, students only their own
-              if (userRole === 'teacher' || task.name === name) {
+              // Check permissions
+              if (currentUser.role === 'teacher' || task.userId === currentUser.uid) {
                 // Delete the task
                 database.ref('tasks/' + childSnapshot.key).remove();
                 
@@ -1388,7 +1535,8 @@
                   subtaskId: subtaskId,
                   action: 'removed',
                   timestamp: firebase.database.ServerValue.TIMESTAMP,
-                  userName: name
+                  userId: currentUser.uid,
+                  userName: currentUser.name
                 });
               } else {
                 alert("You can only delete your own tasks.");
@@ -1535,7 +1683,7 @@
               const commentElement = document.createElement('div');
               commentElement.className = 'comment';
               
-              const isCurrentUser = comment.userName === document.getElementById('name').value;
+              const isCurrentUser = comment.userId === currentUser?.uid;
               if (isCurrentUser) {
                 commentElement.classList.add('own-comment');
               }
@@ -1560,11 +1708,8 @@
 
     // Function to post a comment
     function postComment() {
-      const name = document.getElementById('name').value.trim();
-      const title = document.getElementById('title').value.trim();
-      
-      if (!name || !title) {
-        alert("Please enter your name and title before posting comments.");
+      if (!currentUser) {
+        alert("Please log in to add a comment.");
         return;
       }
       
@@ -1589,9 +1734,9 @@
             taskIdentifier: `${currentTaskId}_${currentSubtaskId}`, // For easier queries
             taskName: taskName,
             text: commentText,
-            userName: name,
-            userTitle: title,
-            userRole: getUserRole(),
+            userId: currentUser.uid,
+            userName: currentUser.name,
+            userRole: currentUser.role,
             timestamp: firebase.database.ServerValue.TIMESTAMP
           });
         })
@@ -1720,7 +1865,7 @@
       database.ref('comments').on('child_added', (snapshot) => {
         const comment = snapshot.val();
         // Show notification for new comments
-        if (comment.userName !== document.getElementById('name').value) {
+        if (comment.userId !== currentUser?.uid) {
           showNotification(`New comment from ${comment.userName} on task "${comment.taskName}"`);
         }
       });
@@ -1958,13 +2103,8 @@
       const registerBtn = document.getElementById('register-btn');
       if (registerBtn) {
         registerBtn.addEventListener('click', function() {
-          const name = document.getElementById('name').value.trim();
-          const title = document.getElementById('title').value.trim();
-          
-          if (!name || !title) {
-            const errorMessage = document.getElementById('error-message');
-            errorMessage.innerHTML = '<p>Please enter your name and title before registering for tasks.</p>';
-            errorMessage.style.display = 'block';
+          if (!currentUser) {
+            alert("Please enter your name and title before registering for tasks.");
             return;
           }
           
@@ -2008,9 +2148,6 @@
       
       // Initialize expandedTasks object
       expandedTasks = {};
-      
-      // Set up real-time listeners
-      setupRealtimeListeners();
     });
   </script>
 </body>
