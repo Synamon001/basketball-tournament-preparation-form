@@ -854,9 +854,13 @@
       
       <select id="category-filter" onchange="filterTasks()">
         <option value="all">All categories</option>
-        <option value="Tasks Before the Event">Tasks Before the Event</option>
-        <option value="Tasks During the Event">Tasks During the Event</option>
-        <option value="Tasks After the Event">Tasks After the Event</option>
+        <option value="Administration and Coordination">Administration and Coordination</option>
+        <option value="Setup and Preparation">Setup and Preparation</option>
+        <option value="Cleanup and Teardown">Cleanup and Teardown</option>
+        <option value="Financial Reporting">Financial Reporting</option>
+        <option value="Feedback Collection and Analysis">Feedback Collection and Analysis</option>
+        <option value="Thank You and Recognition">Thank You and Recognition</option>
+        <option value="Final Event Report">Final Event Report</option>
       </select>
     </div>
     
@@ -1680,7 +1684,7 @@
       const taskCategories = {
         'task1': { 
           name: 'Administration and Coordination', 
-          category: 'Tasks Before the Event', 
+          category: 'Administration and Coordination', 
           subtasks: {
             'subtask1-1': 'Prepare authorization request documents',
             'subtask1-2': 'Coordinate with administration',
@@ -1691,7 +1695,7 @@
         },
         'task2': { 
           name: 'Setup and Preparation', 
-          category: 'Tasks During the Event', 
+          category: 'Setup and Preparation', 
           subtasks: {
             'subtask2-1': 'Set up sports equipment',
             'subtask2-2': 'Set up game fair booths',
@@ -1702,19 +1706,19 @@
         },
         'task3': { 
           name: 'Cleanup and Teardown', 
-          category: 'Tasks After the Event', 
+          category: 'Cleanup and Teardown', 
           subtasks: {
             'subtask3-1': 'Dismantle game fair booths',
             'subtask3-2': 'Clean the gymnasium floor',
             'subtask3-3': 'Return sports equipment',
-             'subtask3-4': 'Clean the canteen area',
+            'subtask3-4': 'Clean the canteen area',
             'subtask3-5': 'Remove signage and decorations',
             'subtask3-6': 'Final verification of spaces'
           }
         },
         'task4': { 
           name: 'Financial Reporting', 
-          category: 'Tasks After the Event', 
+          category: 'Financial Reporting', 
           subtasks: {
             'subtask4-1': 'Collect receipts and expenses',
             'subtask4-2': 'Calculate profits/losses',
@@ -1723,7 +1727,7 @@
         },
         'task5': { 
           name: 'Feedback Collection and Analysis', 
-          category: 'Tasks After the Event', 
+          category: 'Feedback Collection and Analysis', 
           subtasks: {
             'subtask5-1': 'Create feedback forms',
             'subtask5-2': 'Distribute and collect forms',
@@ -1733,7 +1737,7 @@
         },
         'task6': { 
           name: 'Thank You and Recognition', 
-          category: 'Tasks After the Event', 
+          category: 'Thank You and Recognition', 
           subtasks: {
             'subtask6-1': 'Draft thank you messages',
             'subtask6-2': 'Identify all contributors',
@@ -1742,7 +1746,7 @@
         },
         'task7': { 
           name: 'Final Event Report', 
-          category: 'Tasks After the Event', 
+          category: 'Final Event Report', 
           subtasks: {
             'subtask7-1': 'Gather information from all teams',
             'subtask7-2': 'Draft report sections',
@@ -1754,9 +1758,13 @@
       
       // Group tasks by category for organization
       const categoryGroups = {
-        'Tasks Before the Event': [],
-        'Tasks During the Event': [],
-        'Tasks After the Event': []
+        'Administration and Coordination': [],
+        'Setup and Preparation': [],
+        'Cleanup and Teardown': [],
+        'Financial Reporting': [],
+        'Feedback Collection and Analysis': [],
+        'Thank You and Recognition': [],
+        'Final Event Report': []
       };
       
       // Organize tasks by category
