@@ -599,7 +599,7 @@
   <!-- User Controls -->
   <div class="user-controls">
     <span id="current-user-display" class="user-display"></span>
-    <button onclick="logout()">Change User</button>
+    <button onclick="changeUser()">Change User</button>
   </div>
   
   <!-- Event Information -->
@@ -620,6 +620,8 @@
     
     <label for="title">Title (student, teacher, etc) <span class="required-label">*</span></label>
     <input type="text" id="title" required>
+    
+    <button id="save-user-info" class="action-btn">Save User Info</button>
   </div>
   
   <!-- New Tab Container Positioned Before Tasks -->
@@ -948,25 +950,6 @@
     </div>
   </div>
   
-  <!-- Simplified Authentication Modal -->
-  <div id="auth-modal" class="modal">
-    <div class="modal-content">
-      <h3>Welcome to the Basketball Tournament Task Signup</h3>
-      
-      <div id="simple-login-form">
-        <label for="login-name">First Name or Nickname <span class="required-label">*</span></label>
-        <input type="text" id="login-name" required>
-        
-        <label for="login-title">Title (student, teacher, etc.) <span class="required-label">*</span></label>
-        <input type="text" id="login-title" required>
-        
-        <button id="login-btn" class="submit-btn">Continue</button>
-      </div>
-      
-      <div id="auth-error" class="error-message"></div>
-    </div>
-  </div>
-  
   <script>
     // Variables for current user
     let currentUser = null;
@@ -978,26 +961,13 @@
     // Store expanded state for task categories
     let expandedTasks = {};
 
-    // Function to show authentication modal
-    function showAuthModal() {
-      document.getElementById('auth-modal').style.display = 'flex';
-    }
-
-    // Function to hide authentication modal
-    function hideAuthModal() {
-      document.getElementById('auth-modal').style.display = 'none';
-    }
-
-    // Function to handle login
-    function handleLogin() {
-      const name = document.getElementById('login-name').value.trim();
-      const title = document.getElementById('login-title').value.trim();
-      
-      const authError = document.getElementById('auth-error');
+    // Function to save user info
+    function saveUserInfo() {
+      const name = document.getElementById('name').value.trim();
+      const title = document.getElementById('title').value.trim();
       
       if (!name || !title) {
-        authError.textContent = 'Name and title are required';
-        authError.style.display = 'block';
+        alert('Name and title are required');
         return;
       }
       
@@ -1025,21 +995,17 @@
         userDisplay.innerHTML = `User: <strong>${name}</strong> (${title})`;
       }
       
-      // Pre-fill form fields
-      document.getElementById('name').value = name;
-      document.getElementById('title').value = title;
-      
-      hideAuthModal();
-      
       // Set up real-time listeners
       setupRealtimeListeners();
       
       // Initialize tracking tab
       initializeTrackingTab();
+      
+      alert('User information saved!');
     }
 
-    // Function to logout
-    function logout() {
+    // Function to change user
+    function changeUser() {
       localStorage.removeItem('basketballTaskUser');
       currentUser = null;
       
@@ -1053,7 +1019,7 @@
         userDisplay.innerHTML = '';
       }
       
-      showAuthModal();
+      alert('Please enter your name and title, then click "Save User Info"');
     }
     
     // New Tab functionality
@@ -1408,7 +1374,7 @@
     // Function to update task status
     function updateTaskStatus(taskId, subtaskId, status) {
       if (!currentUser) {
-        alert("Please log in to update task status.");
+        alert("Please save your user information before updating task status.");
         return;
       }
       
@@ -1449,7 +1415,7 @@
     // Function to remove a task
     function removeTask(taskId, subtaskId) {
       if (!currentUser) {
-        alert("Please log in to delete tasks.");
+        alert("Please save your user information before removing tasks.");
         return;
       }
       
@@ -1645,7 +1611,7 @@
     // Function to post a comment
     function postComment() {
       if (!currentUser) {
-        alert("Please log in to add a comment.");
+        alert("Please save your user information before adding a comment.");
         return;
       }
       
@@ -1695,8 +1661,6 @@
     }
     
     // Function to display task history
-    function viewTaskHistory(
-       // Function to display task history
     function viewTaskHistory(taskId, subtaskId) {
       const historyContainer = document.getElementById('history-container');
       historyContainer.innerHTML = '<p>Loading history...</p>';
@@ -2023,28 +1987,22 @@
         document.getElementById('name').value = currentUser.name;
         document.getElementById('title').value = currentUser.title;
         
-        // Hide the auth modal
-        hideAuthModal();
-        
         // Set up real-time listeners
         setupRealtimeListeners();
         
         // Initialize tracking tab
         initializeTrackingTab();
-      } else {
-        // Show the auth modal if no user is found
-        showAuthModal();
       }
       
-      // Add event listener to login button
-      document.getElementById('login-btn').addEventListener('click', handleLogin);
+      // Add event listener to save user info button
+      document.getElementById('save-user-info').addEventListener('click', saveUserInfo);
       
       // Set up registration button
       const registerBtn = document.getElementById('register-btn');
       if (registerBtn) {
         registerBtn.addEventListener('click', function() {
           if (!currentUser) {
-            alert("Please enter your name and title before registering for tasks.");
+            alert("Please save your user information before registering for tasks.");
             return;
           }
           
