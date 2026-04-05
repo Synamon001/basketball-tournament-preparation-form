@@ -925,22 +925,6 @@
         <option value="Tasks During the Event">Tasks During the Event</option>
         <option value="Tasks After the Event">Tasks After the Event</option>
       </select>
-      
-      <div class="checkbox-container">
-        <input type="checkbox" id="my-tasks-filter" onchange="filterTasks()">
-        <label for="my-tasks-filter">My tasks only</label>
-      </div>
-      
-      <div class="checkbox-container">
-        <input type="checkbox" id="urgent-filter" onchange="filterTasks()">
-        <label for="urgent-filter">Urgent tasks only</label>
-      </div>
-      
-      <select id="role-filter" onchange="filterTasks()">
-        <option value="all">All roles</option>
-        <option value="student">Students only</option>
-        <option value="teacher">Teachers only</option>
-      </select>
     </div>
     
     <!-- Tracking Table -->
@@ -1048,6 +1032,9 @@
     // Variables for comment system
     let currentTaskId = '';
     let currentSubtaskId = '';
+    
+    // Store expanded state for task categories
+    let expandedTasks = {};
 
     // Function to show authentication modal
     function showAuthModal() {
@@ -1282,9 +1269,11 @@
         if (row.classList.contains('hidden')) {
           row.classList.remove('hidden');
           button.textContent = '-';
+          expandedTasks[parentId] = true; // Store expanded state
         } else {
           row.classList.add('hidden');
           button.textContent = '+';
+          expandedTasks[parentId] = false; // Store collapsed state
         }
       });
     }
@@ -1292,21 +1281,24 @@
     // Function to search tasks
     function searchTasks() {
       const searchText = document.getElementById('task-search').value.toLowerCase();
-      const rows = document.querySelectorAll('#tracking-table tbody tr:not(.task-category)');
+      const rows = document.querySelectorAll('#tracking-table tbody tr');
       
       rows.forEach(row => {
+        // Only show subtask rows, not main category rows
+        if (!row.classList.contains('subtask-row')) {
+          return;
+        }
+        
         const taskName = row.cells[0].textContent.toLowerCase();
         if (taskName.includes(searchText)) {
           row.style.display = '';
           
-          // If it's a subtask, also show its parent category
-          if (row.classList.contains('subtask-row')) {
-            const parentId = row.getAttribute('data-parent');
-            const parentRows = document.querySelectorAll(`tr.main-task`);
+          // Show parent row if needed
+          const parentId = row.getAttribute('data-parent');
+          if (parentId) {
+            const parentRows = document.querySelectorAll(`tr.main-task[data-task-id="${parentId}"]`);
             parentRows.forEach(parentRow => {
-              if (parentRow.cells[0].textContent.toLowerCase().includes(parentId.toLowerCase())) {
-                parentRow.style.display = '';
-              }
+              parentRow.style.display = '';
             });
           }
         } else {
@@ -1315,36 +1307,26 @@
       });
     }
     
-    // Enhanced filtering function
+    // Simplified filtering function
     function filterTasks() {
       const statusFilter = document.getElementById('status-filter').value;
       const categoryFilter = document.getElementById('category-filter').value;
-      const myTasksFilter = document.getElementById('my-tasks-filter').checked;
-      const searchText = document.getElementById('task-search').value.toLowerCase();
       
-      // New filter for urgent tasks
-      const urgentFilter = document.getElementById('urgent-filter').checked;
-      
-      // New filter by user role
-      const roleFilter = document.getElementById('role-filter').value;
-      
-      const rows = document.querySelectorAll('#tracking-table tbody tr:not(.task-category)');
+      const rows = document.querySelectorAll('#tracking-table tbody tr');
       
       rows.forEach(row => {
-        let showRow = true;
-        
-        // Filter by text
-        if (searchText) {
-          const taskName = row.cells[0].textContent.toLowerCase();
-          if (!taskName.includes(searchText)) {
-            showRow = false;
-          }
+        // Only filter subtask rows, not main category rows
+        if (!row.classList.contains('subtask-row')) {
+          return;
         }
+        
+        let showRow = true;
         
         // Filter by status
         if (statusFilter !== 'all') {
-          const statusText = row.cells[5].textContent.toLowerCase();
-          if (!statusText.includes(statusFilter.replace('-', ' '))) {
+          const statusCell = row.cells[5];
+          const statusSelect = statusCell.querySelector('select');
+          if (statusSelect && statusSelect.value !== statusFilter) {
             showRow = false;
           }
         }
@@ -1353,31 +1335,6 @@
         if (categoryFilter !== 'all') {
           const categoryText = row.cells[1].textContent.toLowerCase();
           if (!categoryText.includes(categoryFilter.toLowerCase())) {
-            showRow = false;
-          }
-        }
-        
-        // Filter by my tasks
-        if (myTasksFilter && currentUser) {
-          const assignedTo = row.cells[2].textContent;
-          if (!assignedTo.includes(currentUser.name)) {
-            showRow = false;
-          }
-        }
-        
-        // Filter by urgency
-        if (urgentFilter) {
-          const isPriority = row.classList.contains('priority-task');
-          if (!isPriority) {
-            showRow = false;
-          }
-        }
-        
-        // Filter by role
-        if (roleFilter !== 'all') {
-          const assignedUsers = getAllAssignedPeopleWithRoles(row.dataset.taskId, row.dataset.subtaskId);
-          const hasUserWithRole = assignedUsers.some(user => user.role === roleFilter);
-          if (!hasUserWithRole) {
             showRow = false;
           }
         }
@@ -1651,127 +1608,68 @@
       const subtaskId = task.subtaskId;
       const status = task.status || 'not-started'; // Default: Not started
       
-      // Find the main task row
-      let mainTaskRow = null;
-      const mainTaskRows = document.querySelectorAll('tr.main-task');
-      
-      for (let i = 0; i < mainTaskRows.length; i++) {
-        const row = mainTaskRows[i];
-        const taskCell = row.cells[0];
-        if (taskCell && taskCell.textContent.toLowerCase().includes(taskId.toLowerCase())) {
-          mainTaskRow = row;
-          break;
-        }
+      // Skip tasks without a specific subtask (main categories)
+      if (!subtaskId) {
+        return;
       }
       
-      if (mainTaskRow) {
-        // If no specific subtask, update the main task row
-        if (!subtaskId) {
-          // Get all people assigned to this main task
-          getAllAssignedPeople(taskId, '').then(assignedPeople => {
+      // Find the subtask row
+      const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
+      
+      for (let i = 0; i < subtaskRows.length; i++) {
+        const row = subtaskRows[i];
+        if (row.dataset.subtaskId === subtaskId) {
+          // Get all people assigned to this micro-task
+          getAllAssignedPeople(taskId, subtaskId).then(assignedPeople => {
             // Update the cell with all assigned people - now with bold formatting
             if (assignedPeople.length > 0) {
-              mainTaskRow.cells[2].innerHTML = `<span class="assigned-user">${assignedPeople.join(', ')}</span>`;
+              row.cells[2].innerHTML = `<span class="assigned-user">${assignedPeople.join(', ')}</span>`;
             } else {
-              mainTaskRow.cells[2].innerHTML = `<span class="not-assigned">Not assigned yet</span>`;
+              row.cells[2].innerHTML = `<span class="not-assigned">Not assigned yet</span>`;
             }
             
-            // Update deadline (use the closest one)
-            getRegisteredTasks().then(tasks => {
-              const deadlines = tasks
-                .filter(t => t.taskId === taskId && (!t.subtaskId || t.subtaskId === ''))
-                .map(t => t.deadline)
-                .filter(d => d);
-              
-              if (deadlines.length > 0) {
-                deadlines.sort();
-                mainTaskRow.cells[3].textContent = deadlines[0];
-              }
-              
-              // Update status with an embedded selector
-              mainTaskRow.cells[5].innerHTML = `
-                <select class="status-select status-${status}" onchange="updateTaskStatus('${taskId}', '', this.value)">
-                  <option value="not-started" ${status === 'not-started' ? 'selected' : ''}>Not started</option>
-                  <option value="in-progress" ${status === 'in-progress' ? 'selected' : ''}>In progress</option>
-                  <option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option>
-                </select>
-              `;
-              
-              // Update actions - show remove button only if task has assignees
-              hasAssignees(taskId, '').then(hasAssigneesForTask => {
-                mainTaskRow.cells[6].innerHTML = `
-                <button class="action-btn" onclick="editTask('${taskId}')">Edit</button>
-                  <button class="action-btn" onclick="viewTaskHistory('${taskId}', '')">History</button>
-                  ${hasAssigneesForTask ? `<button class="action-btn remove-btn" onclick="removeTask('${taskId}', '')">Remove</button>` : ''}
-                `;
-              });
-            });
-          });
-        } else {
-          // Find and update the specific subtask row
-          const subtaskRows = document.querySelectorAll(`tr.subtask-row[data-parent="${taskId}"]`);
-          
-          for (let i = 0; i < subtaskRows.length; i++) {
-            const row = subtaskRows[i];
-            const subtaskCell = row.cells[0];
+            // Update deadline
+            if (task.deadline) {
+              row.cells[3].textContent = task.deadline;
+            }
             
-            if (subtaskCell && subtaskCell.textContent.toLowerCase().includes(task.subtaskName.toLowerCase())) {
-              // Get all people assigned to this micro-task
-              getAllAssignedPeople(taskId, subtaskId).then(assignedPeople => {
-                // Update the cell with all assigned people - now with bold formatting
-                if (assignedPeople.length > 0) {
-                  row.cells[2].innerHTML = `<span class="assigned-user">${assignedPeople.join(', ')}</span>`;
-                } else {
-                  row.cells[2].innerHTML = `<span class="not-assigned">Not assigned yet</span>`;
-                }
-                
-                // Update deadline (use the closest one)
-                getRegisteredTasks().then(tasks => {
-                  const deadlines = tasks
-                    .filter(t => t.taskId === taskId && t.subtaskId === subtaskId)
-                    .map(t => t.deadline)
-                    .filter(d => d);
-                  
-                  if (deadlines.length > 0) {
-                    deadlines.sort();
-                    row.cells[3].textContent = deadlines[0];
-                  }
-                  
-                  // Update time if provided
-                  if (task.reminderTime) {
-                    row.cells[4].textContent = task.reminderTime;
-                  }
-                  
-                  // Update status with an embedded selector
-                  row.cells[5].innerHTML = `
-                    <select class="status-select status-${status}" onchange="updateTaskStatus('${taskId}', '${subtaskId}', this.value)">
-                      <option value="not-started" ${status === 'not-started' ? 'selected' : ''}>Not started</option>
-                      <option value="in-progress" ${status === 'in-progress' ? 'selected' : ''}>In progress</option>
-                      <option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option>
-                    </select>
-                  `;
-                  
-                  // Update actions - show remove button only if subtask has assignees
-                  hasAssignees(taskId, subtaskId).then(hasAssigneesForSubtask => {
-                    row.cells[6].innerHTML = `
-                      <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
-                      <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
-                      <button class="action-btn" onclick="viewTaskHistory('${taskId}', '${subtaskId}')">History</button>
-                      ${hasAssigneesForSubtask ? `<button class="action-btn remove-btn" onclick="removeTask('${taskId}', '${subtaskId}')">Remove</button>` : ''}
-                    `;
-                  });
-                });
-                
-                // Expand subtasks to show the assigned task
-                const expandBtn = mainTaskRow.querySelector('.expand-btn');
+            // Update time if provided
+            if (task.reminderTime) {
+              row.cells[4].textContent = task.reminderTime;
+            }
+            
+            // Update status with an embedded selector
+            row.cells[5].innerHTML = `
+              <select class="status-select status-${status}" onchange="updateTaskStatus('${taskId}', '${subtaskId}', this.value)">
+                <option value="not-started" ${status === 'not-started' ? 'selected' : ''}>Not started</option>
+                <option value="in-progress" ${status === 'in-progress' ? 'selected' : ''}>In progress</option>
+                <option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option>
+              </select>
+            `;
+            
+            // Update actions - show remove button only if subtask has assignees
+            hasAssignees(taskId, subtaskId).then(hasAssigneesForSubtask => {
+              row.cells[6].innerHTML = `
+                <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
+                <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
+                <button class="action-btn" onclick="viewTaskHistory('${taskId}', '${subtaskId}')">History</button>
+                ${hasAssigneesForSubtask ? `<button class="action-btn remove-btn" onclick="removeTask('${taskId}', '${subtaskId}')">Remove</button>` : ''}
+              `;
+            });
+            
+            // Restore expanded state if it was previously expanded
+            if (expandedTasks[taskId]) {
+              const mainTaskRows = document.querySelectorAll(`tr.main-task[data-task-id="${taskId}"]`);
+              mainTaskRows.forEach(mainRow => {
+                const expandBtn = mainRow.querySelector('.expand-btn');
                 if (expandBtn && expandBtn.textContent === '+') {
                   expandBtn.click();
                 }
               });
-              
-              break;
             }
-          }
+          });
+          
+          break;
         }
       }
     }
@@ -1805,7 +1703,7 @@
         }
         
         // Load comments
-        loadComments(taskId, subtaskId);
+loadComments(taskId, subtaskId);
         
         document.getElementById('assignees-modal').style.display = 'flex';
       });
@@ -2127,83 +2025,89 @@
         }
       };
       
-      // Add main tasks and their subtasks
+      // Group tasks by category for organization
+      const categoryGroups = {
+        'Tasks Before the Event': [],
+        'Tasks During the Event': [],
+        'Tasks After the Event': []
+      };
+      
+      // Organize tasks by category
       for (const taskId in taskCategories) {
         const taskInfo = taskCategories[taskId];
+        categoryGroups[taskInfo.category].push({
+          id: taskId,
+          ...taskInfo
+        });
+      }
+      
+      // Add category headers and their subtasks
+      for (const category in categoryGroups) {
+        // Add category header row
+        const categoryRow = trackingTable.insertRow();
+        categoryRow.className = 'task-category';
+        const categoryCell = categoryRow.insertCell(0);
+        categoryCell.colSpan = 7;
+        categoryCell.textContent = category;
         
-        // Add main task row
-        const mainTaskRow = trackingTable.insertRow();
-        mainTaskRow.className = 'main-task';
-        mainTaskRow.dataset.taskId = taskId;
-        
-        // Task name cell with expand button
-        const taskNameCell = mainTaskRow.insertCell(0);
-        taskNameCell.innerHTML = `<button class="expand-btn" onclick="toggleSubtasks('${taskId}')">+</button> ${taskInfo.name}`;
-        
-        // Other cells
-        mainTaskRow.insertCell(1).textContent = taskInfo.category;
-        
-        // Add assigned people cell (will be populated later)
-        mainTaskRow.insertCell(2).innerHTML = `<span class="not-assigned">Loading...</span>`;
-        
-        // Deadline and time
-        mainTaskRow.insertCell(3).textContent = '';
-        mainTaskRow.insertCell(4).textContent = '';
-        
-        // Default status
-        const statusCell = mainTaskRow.insertCell(5);
-        statusCell.innerHTML = `
-          <select class="status-select status-not-started" onchange="updateTaskStatus('${taskId}', '', this.value)">
-            <option value="not-started" selected>Not started</option>
-            <option value="in-progress">In progress</option>
-            <option value="completed">Completed</option>
-          </select>
-        `;
-        
-        // Actions - will be populated later
-        mainTaskRow.insertCell(6).innerHTML = `
-          <button class="action-btn" onclick="editTask('${taskId}')">Edit</button>
-          <button class="action-btn" onclick="viewTaskHistory('${taskId}', '')">History</button>
-        `;
-        
-        // Add subtasks
-        for (const subtaskId in taskInfo.subtasks) {
-          const subtaskName = taskInfo.subtasks[subtaskId];
+        // Add tasks for this category
+        categoryGroups[category].forEach(taskInfo => {
+          // Add main task row
+          const mainTaskRow = trackingTable.insertRow();
+          mainTaskRow.className = 'main-task';
+          mainTaskRow.dataset.taskId = taskInfo.id;
           
-          const subtaskRow = trackingTable.insertRow();
-          subtaskRow.className = 'subtask-row hidden';
-          subtaskRow.setAttribute('data-parent', taskId);
-          subtaskRow.dataset.taskId = taskId;
-          subtaskRow.dataset.subtaskId = subtaskId;
+          // Task name cell with expand button
+          const taskNameCell = mainTaskRow.insertCell(0);
+          taskNameCell.innerHTML = `<button class="expand-btn" onclick="toggleSubtasks('${taskInfo.id}')">+</button> ${taskInfo.name}`;
           
-          // Subtask cells
-          subtaskRow.insertCell(0).textContent = subtaskName;
-          subtaskRow.insertCell(1).textContent = taskInfo.category;
+          // Other cells
+          mainTaskRow.insertCell(1).textContent = category;
+          mainTaskRow.insertCell(2).innerHTML = '';
+          mainTaskRow.insertCell(3).textContent = '';
+          mainTaskRow.insertCell(4).textContent = '';
+          mainTaskRow.insertCell(5).textContent = '';
+          mainTaskRow.insertCell(6).textContent = '';
           
-          // Add assigned people cell (will be populated later)
-          subtaskRow.insertCell(2).innerHTML = `<span class="not-assigned">Loading...</span>`;
-          
-          // Deadline and time
-          subtaskRow.insertCell(3).textContent = '';
-          subtaskRow.insertCell(4).textContent = '';
-          
-          // Default status
-          const subtaskStatusCell = subtaskRow.insertCell(5);
-          subtaskStatusCell.innerHTML = `
-            <select class="status-select status-not-started" onchange="updateTaskStatus('${taskId}', '${subtaskId}', this.value)">
-              <option value="not-started" selected>Not started</option>
-              <option value="in-progress">In progress</option>
-              <option value="completed">Completed</option>
-            </select>
-          `;
-          
-          // Actions - will be populated later
-          subtaskRow.insertCell(6).innerHTML = `
-            <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
-            <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
-            <button class="action-btn" onclick="viewTaskHistory('${taskId}', '${subtaskId}')">History</button>
-          `;
-        }
+          // Add subtasks
+          for (const subtaskId in taskInfo.subtasks) {
+            const subtaskName = taskInfo.subtasks[subtaskId];
+            
+            const subtaskRow = trackingTable.insertRow();
+            subtaskRow.className = 'subtask-row hidden';
+            subtaskRow.setAttribute('data-parent', taskInfo.id);
+            subtaskRow.dataset.taskId = taskInfo.id;
+            subtaskRow.dataset.subtaskId = subtaskId;
+            
+            // Subtask cells
+            subtaskRow.insertCell(0).textContent = subtaskName;
+            subtaskRow.insertCell(1).textContent = category;
+            
+            // Add assigned people cell (will be populated later)
+            subtaskRow.insertCell(2).innerHTML = `<span class="not-assigned">Loading...</span>`;
+            
+            // Deadline and time
+            subtaskRow.insertCell(3).textContent = '';
+            subtaskRow.insertCell(4).textContent = '';
+            
+            // Default status
+            const subtaskStatusCell = subtaskRow.insertCell(5);
+            subtaskStatusCell.innerHTML = `
+              <select class="status-select status-not-started" onchange="updateTaskStatus('${taskInfo.id}', '${subtaskId}', this.value)">
+                <option value="not-started" selected>Not started</option>
+                <option value="in-progress">In progress</option>
+                <option value="completed">Completed</option>
+              </select>
+            `;
+            
+            // Actions - will be populated later
+            subtaskRow.insertCell(6).innerHTML = `
+              <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
+              <button class="action-btn" onclick="viewAssignees('${taskInfo.id}', '${subtaskId}')">View All</button>
+              <button class="action-btn" onclick="viewTaskHistory('${taskInfo.id}', '${subtaskId}')">History</button>
+            `;
+          }
+        });
       }
       
       // Update statuses of registered tasks
@@ -2211,6 +2115,18 @@
         registeredTasks.forEach(task => {
           updateTaskInTrackingTable(task);
         });
+        
+        // Restore expanded states after updating
+        for (const taskId in expandedTasks) {
+          if (expandedTasks[taskId]) {
+            const expandBtns = document.querySelectorAll(`tr.main-task[data-task-id="${taskId}"] .expand-btn`);
+            expandBtns.forEach(btn => {
+              if (btn.textContent === '+') {
+                btn.click();
+              }
+            });
+          }
+        }
       });
     }
     
@@ -2219,6 +2135,13 @@
       // Refresh tracking table every 30 seconds
       setInterval(() => {
         if (document.getElementById('tracking-content').style.display !== 'none') {
+          // Store expanded state before refreshing
+          const expandButtons = document.querySelectorAll('.expand-btn');
+          expandButtons.forEach(btn => {
+            const taskId = btn.closest('tr').dataset.taskId;
+            expandedTasks[taskId] = (btn.textContent === '-');
+          });
+          
           initializeTrackingTable();
         }
       }, 30000); // 30 seconds
@@ -2278,6 +2201,9 @@
       
       // Add event listener to comment button
       document.getElementById('post-comment-btn').addEventListener('click', postComment);
+      
+      // Initialize expandedTasks object
+      expandedTasks = {};
     });
   </script>
 </body>
