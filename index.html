@@ -1438,7 +1438,7 @@
           const hasAssigneesForSubtask = hasAssignees(taskId, subtaskId);
           row.cells[6].innerHTML = `
             <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
-            <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">View All</button>
+            <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">Chat room</button>
             <button class="action-btn" onclick="viewTaskHistory('${taskId}', '${subtaskId}')">History</button>
             ${hasAssigneesForSubtask ? `<button class="action-btn remove-btn" onclick="removeTask('${taskId}', '${subtaskId}')">Remove</button>` : ''}
           `;
@@ -1821,7 +1821,7 @@
             // Actions - will be populated later
             subtaskRow.insertCell(6).innerHTML = `
               <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
-              <button class="action-btn" onclick="viewAssignees('${taskInfo.id}', '${subtaskId}')">View All</button>
+              <button class="action-btn" onclick="viewAssignees('${taskInfo.id}', '${subtaskId}')">Chat room</button>
               <button class="action-btn" onclick="viewTaskHistory('${taskInfo.id}', '${subtaskId}')">History</button>
             `;
           }
