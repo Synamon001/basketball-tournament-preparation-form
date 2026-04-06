@@ -597,6 +597,10 @@
       background-color: #2980b9;
     }
   </style>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
 </head>
 <body>
   <h1>BASKETBALL TOURNAMENT TASKS SIGN UP FORM</h1>
@@ -964,17 +968,36 @@
   </div>
   
   <script>
-    // Variables for current user
+    // Configuration Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyA_HgpTxJrzCnFFAWIFXCzR8OwPomntgM0",
+      authDomain: "event-teamwork.firebaseapp.com",
+      databaseURL: "https://event-teamwork-default-rtdb.firebaseio.com",
+      projectId: "event-teamwork",
+      storageBucket: "event-teamwork.firebasestorage.app",
+      messagingSenderId: "714991067669",
+      appId: "1:714991067669:web:73f862da078ec66e75e41c",
+      measurementId: "G-572PNCSFMS"
+    };
+
+    // Initialiser Firebase
+    firebase.initializeApp(firebaseConfig);
+    const analytics = firebase.analytics();
+
+    // Référence à la base de données
+    const database = firebase.database();
+
+    // Variables pour current user
     let currentUser = null;
-    
-    // Variables for comment system
+
+    // Variables pour comment system
     let currentTaskId = '';
     let currentSubtaskId = '';
-    
+
     // Store expanded state for task categories
     let expandedTasks = {};
-    
-    // Local storage for tasks (simulating a database)
+
+    // Données locales (qui seront synchronisées avec Firebase)
     let taskDatabase = [];
     let taskHistory = [];
     let commentDatabase = [];
@@ -1033,7 +1056,7 @@
       
       alert('Please enter your name and title before registering for tasks.');
     }
-    
+
     // New Tab functionality
     function openNewTab(tabName) {
       // Hide all content
@@ -1058,7 +1081,7 @@
         resetRegistrationForm();
       }
     }
-    
+
     // Function to reset registration form
     function resetRegistrationForm() {
       // Don't clear name field anymore - keep the current user's name
@@ -1090,7 +1113,7 @@
       // Hide error message
       document.getElementById('error-message').style.display = 'none';
     }
-    
+
     // Function to toggle visibility of subtasks - FIXED to maintain state
     function toggleSubtasks(parentId) {
       const subtasks = document.querySelectorAll(`tr[data-parent="${parentId}"]`);
@@ -1108,7 +1131,7 @@
         }
       });
     }
-    
+
     // Function to search tasks
     function searchTasks() {
       const searchText = document.getElementById('task-search').value.toLowerCase();
@@ -1149,7 +1172,7 @@
         }
       });
     }
-    
+
     // Simplified filtering function
     function filterTasks() {
       const statusFilter = document.getElementById('status-filter').value;
@@ -1198,7 +1221,7 @@
         }
       });
     }
-    
+
     // Function to get assigned users with their roles
     function getAllAssignedPeopleWithRoles(taskId, subtaskId) {
       const users = [];
@@ -1214,33 +1237,42 @@
       
       return users;
     }
-    
-    // Function to save task registration
+
+    // MODIFIÉ: Function to save task registration using Firebase
     function saveTaskRegistration(taskData) {
       if (!currentUser) return false;
       
-      taskData.forEach(task => {
+      const promises = taskData.map(task => {
         // Add user ID and timestamp
         task.userId = currentUser.uid;
         task.userRole = currentUser.role;
         task.createdAt = Date.now();
         task.id = Date.now() + Math.random().toString(36).substring(2, 15);
         
-        // Add to database
+        // Add to local database
         taskDatabase.push(task);
+        
+        // Save to Firebase
+        return database.ref('tasks').push(task);
       });
       
-      // Save to localStorage
-      localStorage.setItem('taskDatabase', JSON.stringify(taskDatabase));
+      // Wait for all tasks to be saved
+      Promise.all(promises)
+        .then(() => {
+          console.log('All tasks saved successfully to Firebase');
+        })
+        .catch(error => {
+          console.error('Error saving tasks to Firebase:', error);
+        });
       
       return true;
     }
 
-    // Function to get all tasks
+    // MODIFIÉ: Function to get all tasks from Firebase
     function getRegisteredTasks() {
       return taskDatabase;
     }
-    
+
     // Function to collect task data from selected tasks
     function collectTaskData(selectedTasks) {
       const taskData = [];
@@ -1291,7 +1323,7 @@
       
       return taskData;
     }
-    
+
     // Function to validate task registration
     function validateTaskRegistration() {
       const name = document.getElementById('name').value.trim();
@@ -1326,7 +1358,7 @@
       
       return errors;
     }
-    
+
     // Function to get all people assigned to a specific task/subtask
     function getAllAssignedPeople(taskId, subtaskId) {
       const names = [];
@@ -1340,93 +1372,135 @@
       // Return unique names
       return [...new Set(names)];
     }
-    
+
     // Function to check if a task/subtask has any assignees
     function hasAssignees(taskId, subtaskId) {
       return getAllAssignedPeople(taskId, subtaskId).length > 0;
     }
-    
-    // Function to update task status
+
+    // MODIFIÉ: Function to update task status using Firebase
     function updateTaskStatus(taskId, subtaskId, status) {
       if (!currentUser) {
         alert("Please enter your name and title before updating task status.");
         return;
       }
       
-      // Find the task in the database
-      taskDatabase.forEach(task => {
-        if (task.taskId === taskId && task.subtaskId === subtaskId) {
-          // Check permissions
-          if (currentUser.role === 'teacher' || task.userId === currentUser.uid) {
-            // Update status
-            task.status = status;
-            task.lastUpdated = Date.now();
-            task.lastUpdatedBy = currentUser.uid;
-            
-            // Add to history
-            taskHistory.push({
-              taskId: taskId,
-              subtaskId: subtaskId,
-              status: status,
-              timestamp: Date.now(),
-              userId: currentUser.uid,
-              userName: currentUser.name
+      // Find the task in the database and its Firebase key
+      let taskToUpdate = null;
+      let firebaseKey = null;
+      
+      // Find the task in Firebase
+      database.ref('tasks').orderByChild('subtaskId').equalTo(subtaskId).once('value')
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            snapshot.forEach(childSnapshot => {
+              const task = childSnapshot.val();
+              if (task.taskId === taskId) {
+                firebaseKey = childSnapshot.key;
+                taskToUpdate = task;
+                
+                // Check permissions
+                if (currentUser.role === 'teacher' || task.userId === currentUser.uid) {
+                  // Update status in Firebase
+                  database.ref('tasks/' + firebaseKey).update({
+                    status: status,
+                    lastUpdated: Date.now(),
+                    lastUpdatedBy: currentUser.uid
+                  });
+                  
+                  // Add to history in Firebase
+                  const historyEntry = {
+                    taskId: taskId,
+                    subtaskId: subtaskId,
+                    status: status,
+                    timestamp: Date.now(),
+                    userId: currentUser.uid,
+                    userName: currentUser.name
+                  };
+                  
+                  database.ref('taskHistory').push(historyEntry);
+                  
+                  // Update local copy
+                  taskDatabase.forEach(localTask => {
+                    if (localTask.taskId === taskId && localTask.subtaskId === subtaskId) {
+                      localTask.status = status;
+                      localTask.lastUpdated = Date.now();
+                      localTask.lastUpdatedBy = currentUser.uid;
+                    }
+                  });
+                  
+                  // Add to local history
+                  taskHistory.push(historyEntry);
+                  
+                  // Update the tracking table
+                  updateTaskInTrackingTable(taskToUpdate);
+                } else {
+                  alert("You can only update your own tasks.");
+                }
+              }
             });
-            
-            // Save to localStorage
-            localStorage.setItem('taskDatabase', JSON.stringify(taskDatabase));
-            localStorage.setItem('taskHistory', JSON.stringify(taskHistory));
-            
-            // Update the tracking table
-            updateTaskInTrackingTable(task);
-          } else {
-            alert("You can only update your own tasks.");
           }
-        }
-      });
+        })
+        .catch(error => {
+          console.error("Error updating task status:", error);
+        });
     }
 
-    // Function to remove a task
+    // MODIFIÉ: Function to remove a task using Firebase
     function removeTask(taskId, subtaskId) {
       if (!currentUser) {
         alert("Please enter your name and title before removing tasks.");
         return;
       }
       
-      // Find the task in the database
-      for (let i = 0; i < taskDatabase.length; i++) {
-        const task = taskDatabase[i];
-        
-        if (task.taskId === taskId && task.subtaskId === subtaskId) {
-          // Check permissions
-          if (currentUser.role === 'teacher' || task.userId === currentUser.uid) {
-            // Remove the task
-            taskDatabase.splice(i, 1);
-            i--; // Adjust index after removal
-            
-            // Add to history
-            taskHistory.push({
-              taskId: taskId,
-              subtaskId: subtaskId,
-              action: 'removed',
-              timestamp: Date.now(),
-              userId: currentUser.uid,
-              userName: currentUser.name
+      // Find the task in Firebase
+      database.ref('tasks').orderByChild('subtaskId').equalTo(subtaskId).once('value')
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            snapshot.forEach(childSnapshot => {
+              const task = childSnapshot.val();
+              if (task.taskId === taskId) {
+                const firebaseKey = childSnapshot.key;
+                
+                // Check permissions
+                if (currentUser.role === 'teacher' || task.userId === currentUser.uid) {
+                  // Remove the task from Firebase
+                  database.ref('tasks/' + firebaseKey).remove();
+                  
+                  // Add to history in Firebase
+                  const historyEntry = {
+                    taskId: taskId,
+                    subtaskId: subtaskId,
+                    action: 'removed',
+                    timestamp: Date.now(),
+                    userId: currentUser.uid,
+                    userName: currentUser.name
+                  };
+                  
+                  database.ref('taskHistory').push(historyEntry);
+                  
+                  // Update local copy
+                  taskDatabase = taskDatabase.filter(localTask => 
+                    !(localTask.taskId === taskId && localTask.subtaskId === subtaskId)
+                  );
+                  
+                  // Add to local history
+                  taskHistory.push(historyEntry);
+                  
+                  // Refresh the tracking table
+                  initializeTrackingTable();
+                } else {
+                  alert("You can only delete your own tasks.");
+                }
+              }
             });
-            
-            // Save to localStorage
-            localStorage.setItem('taskDatabase', JSON.stringify(taskDatabase));
-            localStorage.setItem('taskHistory', JSON.stringify(taskHistory));
-          } else {
-            alert("You can only delete your own tasks.");
           }
-        }
-      }
-      
-      // Refresh the tracking table
-      initializeTrackingTable();
+        })
+        .catch(error => {
+          console.error("Error removing task:", error);
+        });
     }
-    
+
     // Function to update a task in the tracking table
     function updateTaskInTrackingTable(task) {
       const taskId = task.taskId;
@@ -1486,8 +1560,8 @@
         }
       }
     }
-    
-    // Function to edit a task
+
+    // MODIFIÉ: Function to edit a task
     function editTask(subtaskId) {
       // Find the task in the database
       let taskToEdit = null;
@@ -1572,91 +1646,125 @@
       document.body.appendChild(modal);
       modal.style.display = 'flex';
     }
-    
-    // Function to save task edits
+
+    // MODIFIÉ: Function to save task edits using Firebase
     function saveTaskEdit(taskId, subtaskId) {
       const deadline = document.getElementById('edit-deadline').value;
       const reminderTime = document.getElementById('edit-time').value;
       const notes = document.getElementById('edit-notes').value;
       
-      // Find the task in the database
-      let taskFound = false;
-      
-      for (let i = 0; i < taskDatabase.length; i++) {
-        if (taskDatabase[i].taskId === taskId && taskDatabase[i].subtaskId === subtaskId) {
-          // Update the task
-          taskDatabase[i].deadline = deadline;
-          taskDatabase[i].reminderTime = reminderTime;
-          taskDatabase[i].notes = notes;
-          taskFound = true;
+      // Find the task in Firebase
+      database.ref('tasks').orderByChild('subtaskId').equalTo(subtaskId).once('value')
+        .then(snapshot => {
+          let firebaseKey = null;
+          let taskFound = false;
           
-          // Add to history
-          taskHistory.push({
-            taskId: taskId,
-            subtaskId: subtaskId,
-            action: 'edited',
-            timestamp: Date.now(),
-            userId: currentUser?.uid || 'guest',
-            userName: currentUser?.name || 'Guest User'
-          });
-          
-          break;
-        }
-      }
-      
-      // If task wasn't found, create a new one
-      if (!taskFound) {
-        // Find the task name from the table
-        let taskName = "Task";
-        const rows = document.querySelectorAll('tr.subtask-row');
-        for (const row of rows) {
-          if (row.dataset.subtaskId === subtaskId) {
-            taskName = row.cells[0].textContent;
-            break;
+          if (snapshot.exists()) {
+            snapshot.forEach(childSnapshot => {
+              const task = childSnapshot.val();
+              if (task.taskId === taskId) {
+                firebaseKey = childSnapshot.key;
+                taskFound = true;
+                
+                // Update the task in Firebase
+                database.ref('tasks/' + firebaseKey).update({
+                  deadline: deadline,
+                  reminderTime: reminderTime,
+                  notes: notes
+                });
+                
+                // Add to history in Firebase
+                const historyEntry = {
+                  taskId: taskId,
+                  subtaskId: subtaskId,
+                  action: 'edited',
+                  timestamp: Date.now(),
+                  userId: currentUser?.uid ||
+                    userId: currentUser?.uid || 'guest',
+                  userName: currentUser?.name || 'Guest User'
+                };
+                
+                database.ref('taskHistory').push(historyEntry);
+                
+                // Update local copy
+                for (let i = 0; i < taskDatabase.length; i++) {
+                  if (taskDatabase[i].taskId === taskId && taskDatabase[i].subtaskId === subtaskId) {
+                    taskDatabase[i].deadline = deadline;
+                    taskDatabase[i].reminderTime = reminderTime;
+                    taskDatabase[i].notes = notes;
+                    break;
+                  }
+                }
+                
+                // Add to local history
+                taskHistory.push(historyEntry);
+              }
+            });
           }
-        }
-        
-        const newTask = {
-          taskId: taskId,
-          subtaskId: subtaskId,
-          subtaskName: taskName,
-          deadline: deadline,
-          reminderTime: reminderTime,
-          notes: notes,
-          status: 'not-started',
-          userId: 'editor-' + Date.now(),
-          name: 'Editor',
-          title: 'Guest',
-          createdAt: Date.now()
-        };
-        
-        taskDatabase.push(newTask);
-        
-        // Add to history
-        taskHistory.push({
-          taskId: taskId,
-          subtaskId: subtaskId,
-          action: 'created',
-          timestamp: Date.now(),
-          userId: 'editor-' + Date.now(),
-          userName: 'Guest Editor'
+          
+          // If task wasn't found, create a new one
+          if (!taskFound) {
+            // Find the task name from the table
+            let taskName = "Task";
+            const rows = document.querySelectorAll('tr.subtask-row');
+            for (const row of rows) {
+              if (row.dataset.subtaskId === subtaskId) {
+                taskName = row.cells[0].textContent;
+                break;
+              }
+            }
+            
+            const newTask = {
+              taskId: taskId,
+              subtaskId: subtaskId,
+              subtaskName: taskName,
+              deadline: deadline,
+              reminderTime: reminderTime,
+              notes: notes,
+              status: 'not-started',
+              userId: 'editor-' + Date.now(),
+              name: 'Editor',
+              title: 'Guest',
+              createdAt: Date.now()
+            };
+            
+            // Add to Firebase
+            database.ref('tasks').push(newTask);
+            
+            // Add to local database
+            taskDatabase.push(newTask);
+            
+            // Add to history in Firebase
+            const historyEntry = {
+              taskId: taskId,
+              subtaskId: subtaskId,
+              action: 'created',
+              timestamp: Date.now(),
+              userId: 'editor-' + Date.now(),
+              userName: 'Guest Editor'
+            };
+            
+            database.ref('taskHistory').push(historyEntry);
+            
+            // Add to local history
+            taskHistory.push(historyEntry);
+          }
+          
+          // Update the tracking table
+          initializeTrackingTable();
+          
+          // Close the modal
+          closeEditModal();
+          
+          // Show notification
+          showNotification("Task updated successfully");
+        })
+        .catch(error => {
+          console.error("Error saving task edit:", error);
+          alert("An error occurred while saving the task. Please try again.");
         });
-      }
-      
-      // Save to localStorage
-      localStorage.setItem('taskDatabase', JSON.stringify(taskDatabase));
-      localStorage.setItem('taskHistory', JSON.stringify(taskHistory));
-      
-      // Update the tracking table
-      initializeTrackingTable();
-      
-      // Close the modal
-      closeEditModal();
-      
-      // Show notification
-      showNotification("Task updated successfully");
     }
-    
+
     // Function to close edit modal
     function closeEditModal() {
       const modal = document.getElementById('edit-modal');
@@ -1665,7 +1773,7 @@
         modal.remove();
       }
     }
-    
+
     // Function to display assignees and comments
     function viewAssignees(taskId, subtaskId) {
       currentTaskId = taskId;
@@ -1701,8 +1809,8 @@
       
       document.getElementById('assignees-modal').style.display = 'flex';
     }
-    
-    // Function to post a comment
+
+    // MODIFIÉ: Function to post a comment using Firebase
     function postComment() {
       const commentText = document.getElementById('new-comment').value.trim();
       const commenterName = document.getElementById('commenter-name').value.trim();
@@ -1755,11 +1863,11 @@
         timestamp: Date.now()
       };
       
-      // Add to database
-      commentDatabase.push(newComment);
+      // Add to Firebase
+      database.ref('comments').push(newComment);
       
-      // Save to localStorage
-      localStorage.setItem('commentDatabase', JSON.stringify(commentDatabase));
+      // Add to local database
+      commentDatabase.push(newComment);
       
       // Clear text field but keep the name
       document.getElementById('new-comment').value = '';
@@ -1770,135 +1878,160 @@
       // Show notification
       showNotification(`Comment added to task "${taskName}"`);
     }
-    
-    // Function to load comments
+
+    // MODIFIÉ: Function to load comments from Firebase
     function loadComments(taskId, subtaskId) {
       const commentsContainer = document.getElementById('comments-container');
       commentsContainer.innerHTML = '<p>Loading comments...</p>';
       
-      // Filter comments for this task
-      const taskComments = commentDatabase.filter(comment => 
-        comment.taskId === taskId && comment.subtaskId === subtaskId
-      );
-      
-      // Sort comments by date
-      taskComments.sort((a, b) => a.timestamp - b.timestamp);
-      
-      if (taskComments.length === 0) {
-        commentsContainer.innerHTML = '<p>No comments yet. Be the first to add a comment!</p>';
-      } else {
-        commentsContainer.innerHTML = '';
-        
-        taskComments.forEach(comment => {
-          const commentElement = document.createElement('div');
-          commentElement.className = 'comment';
+      // Get comments from Firebase
+      database.ref('comments').orderByChild('taskIdentifier').equalTo(`${taskId}_${subtaskId}`).once('value')
+        .then(snapshot => {
+          const taskComments = [];
           
-          // Check if this comment was posted by the current user (if logged in)
-          const isCurrentUser = currentUser && comment.userName === currentUser.name;
-          if (isCurrentUser) {
-            commentElement.classList.add('own-comment');
+          if (snapshot.exists()) {
+            snapshot.forEach(childSnapshot => {
+              taskComments.push(childSnapshot.val());
+            });
           }
           
-          commentElement.innerHTML = `
-            <div class="comment-header">
-              <strong>${comment.userName}</strong>
-              <span class="comment-date">${new Date(comment.timestamp).toLocaleString()}</span>
-            </div>
-            <div class="comment-body">${comment.text}</div>
-          `;
+          // Sort comments by date
+          taskComments.sort((a, b) => a.timestamp - b.timestamp);
           
-          commentsContainer.appendChild(commentElement);
+          if (taskComments.length === 0) {
+            commentsContainer.innerHTML = '<p>No comments yet. Be the first to add a comment!</p>';
+          } else {
+            commentsContainer.innerHTML = '';
+            
+            taskComments.forEach(comment => {
+              const commentElement = document.createElement('div');
+              commentElement.className = 'comment';
+              
+              // Check if this comment was posted by the current user (if logged in)
+              const isCurrentUser = currentUser && comment.userName === currentUser.name;
+              if (isCurrentUser) {
+                commentElement.classList.add('own-comment');
+              }
+              
+              commentElement.innerHTML = `
+                <div class="comment-header">
+                  <strong>${comment.userName}</strong>
+                  <span class="comment-date">${new Date(comment.timestamp).toLocaleString()}</span>
+                </div>
+                <div class="comment-body">${comment.text}</div>
+              `;
+              
+              commentsContainer.appendChild(commentElement);
+            });
+          }
+        })
+        .catch(error => {
+          console.error("Error loading comments:", error);
+          commentsContainer.innerHTML = '<p>Error loading comments. Please try again later.</p>';
         });
-      }
     }
-    
-    // Function to view task history
+
+    // MODIFIÉ: Function to view task history from Firebase
     function viewTaskHistory(taskId, subtaskId) {
       const historyContainer = document.getElementById('history-container');
-      historyContainer.innerHTML = '';
+      historyContainer.innerHTML = '<p>Loading history...</p>';
       
-      // Filter history entries for this task
-      const taskHistoryEntries = taskHistory.filter(entry => 
-        entry.taskId === taskId && entry.subtaskId === subtaskId
-      );
-      
-      if (taskHistoryEntries.length === 0) {
-        historyContainer.innerHTML = '<p>No history available for this task.</p>';
-      } else {
-        // Create a table for history
-        const table = document.createElement('table');
-        table.className = 'history-table';
-        
-        // Add table header
-        const thead = document.createElement('thead');
-        thead.innerHTML = `
-          <tr>
-            <th>Date</th>
-            <th>Action</th>
-            <th>User</th>
-          </tr>
-        `;
-        table.appendChild(thead);
-        
-        // Add table body
-        const tbody = document.createElement('tbody');
-        
-        // Sort history by date (newest first)
-        taskHistoryEntries.sort((a, b) => b.timestamp - a.timestamp);
-        
-        taskHistoryEntries.forEach(entry => {
-          const row = document.createElement('tr');
+      // Get history from Firebase
+      database.ref('taskHistory').orderByChild('subtaskId').equalTo(subtaskId).once('value')
+        .then(snapshot => {
+          const taskHistoryEntries = [];
           
-          // Format date
-          const date = new Date(entry.timestamp).toLocaleString();
-          
-          // Determine action text
-          let actionText = '';
-          if (entry.status) {
-            actionText = `Changed status to: ${entry.status}`;
-          } else if (entry.action) {
-            actionText = `Task ${entry.action}`;
-          } else {
-            actionText = 'Modified task';
+          if (snapshot.exists()) {
+            snapshot.forEach(childSnapshot => {
+              const entry = childSnapshot.val();
+              if (entry.taskId === taskId) {
+                taskHistoryEntries.push(entry);
+              }
+            });
           }
           
-          row.innerHTML = `
-            <td>${date}</td>
-            <td>${actionText}</td>
-            <td>${entry.userName || 'Unknown user'}</td>
-          `;
+          if (taskHistoryEntries.length === 0) {
+            historyContainer.innerHTML = '<p>No history available for this task.</p>';
+          } else {
+            // Create a table for history
+            const table = document.createElement('table');
+            table.className = 'history-table';
+            
+            // Add table header
+            const thead = document.createElement('thead');
+            thead.innerHTML = `
+              <tr>
+                <th>Date</th>
+                <th>Action</th>
+                <th>User</th>
+              </tr>
+            `;
+            table.appendChild(thead);
+            
+            // Add table body
+            const tbody = document.createElement('tbody');
+            
+            // Sort history by date (newest first)
+            taskHistoryEntries.sort((a, b) => b.timestamp - a.timestamp);
+            
+            taskHistoryEntries.forEach(entry => {
+              const row = document.createElement('tr');
+              
+              // Format date
+              const date = new Date(entry.timestamp).toLocaleString();
+              
+              // Determine action text
+              let actionText = '';
+              if (entry.status) {
+                actionText = `Changed status to: ${entry.status}`;
+              } else if (entry.action) {
+                actionText = `Task ${entry.action}`;
+              } else {
+                actionText = 'Modified task';
+              }
+              
+              row.innerHTML = `
+                <td>${date}</td>
+                <td>${actionText}</td>
+                <td>${entry.userName || 'Unknown user'}</td>
+              `;
+              
+              tbody.appendChild(row);
+            });
+            
+            table.appendChild(tbody);
+            historyContainer.appendChild(table);
+          }
           
-          tbody.appendChild(row);
+          document.getElementById('history-modal').style.display = 'flex';
+        })
+        .catch(error => {
+          console.error("Error loading task history:", error);
+          historyContainer.innerHTML = '<p>Error loading history. Please try again later.</p>';
         });
-        
-        table.appendChild(tbody);
-        historyContainer.appendChild(table);
-      }
-      
-      document.getElementById('history-modal').style.display = 'flex';
     }
-    
+
     // Function to close modal
     function closeModal() {
       document.getElementById('assignees-modal').style.display = 'none';
     }
-    
+
     // Function to close history modal
     function closeHistoryModal() {
       document.getElementById('history-modal').style.display = 'none';
     }
-    
+
     // Function to show confirmation modal
     function showConfirmationModal(message) {
       document.getElementById('confirmation-message').textContent = message;
       document.getElementById('confirmation-modal').style.display = 'flex';
     }
-    
+
     // Function to close confirmation modal
     function closeConfirmationModal() {
       document.getElementById('confirmation-modal').style.display = 'none';
     }
-    
+
     // Function to show notification
     function showNotification(message) {
       // Remove any existing notification
@@ -1923,7 +2056,7 @@
         }, 500);
       }, 3000);
     }
-    
+
     // Function to initialize tracking table
     function initializeTrackingTable() {
       const trackingTable = document.getElementById('tracking-table');
@@ -2086,7 +2219,7 @@
         updateTaskInTrackingTable(task);
       });
     }
-    
+
     // Function to set up auto-refresh for tracking table
     function setupAutoRefresh() {
       // Refresh tracking table every 30 seconds
@@ -2100,33 +2233,62 @@
           });
           
           // Refresh the tracking table
-          initializeTrackingTable();
+          initializeTrackingTab();
         }
       }, 30000); // 30 seconds
     }
-    
-    // Initialize tracking tab
+
+    // MODIFIÉ: Initialize tracking tab with Firebase data
     function initializeTrackingTab() {
-      // Load data from localStorage
-      const savedTasks = localStorage.getItem('taskDatabase');
-      if (savedTasks) {
-        taskDatabase = JSON.parse(savedTasks);
-      }
+      // Show loading indicator
+      const trackingTable = document.getElementById('tracking-table');
+      const tableBody = trackingTable.querySelector('tbody');
+      tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Loading tasks...</td></tr>';
       
-      const savedHistory = localStorage.getItem('taskHistory');
-      if (savedHistory) {
-        taskHistory = JSON.parse(savedHistory);
-      }
+      // Clear local arrays
+      taskDatabase = [];
+      taskHistory = [];
+      commentDatabase = [];
       
-      const savedComments = localStorage.getItem('commentDatabase');
-      if (savedComments) {
-        commentDatabase = JSON.parse(savedComments);
-      }
-      
-      initializeTrackingTable();
-      filterTasks(); // Apply initial filters
+      // Load tasks from Firebase
+      database.ref('tasks').once('value')
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            snapshot.forEach(childSnapshot => {
+              taskDatabase.push(childSnapshot.val());
+            });
+          }
+          
+          // Load history
+          return database.ref('taskHistory').once('value');
+        })
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            snapshot.forEach(childSnapshot => {
+              taskHistory.push(childSnapshot.val());
+            });
+          }
+          
+          // Load comments
+          return database.ref('comments').once('value');
+        })
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            snapshot.forEach(childSnapshot => {
+              commentDatabase.push(childSnapshot.val());
+            });
+          }
+          
+          // Initialize tracking table with loaded data
+          initializeTrackingTable();
+          filterTasks(); // Apply initial filters
+        })
+        .catch(error => {
+          console.error("Error initializing tracking tab:", error);
+          tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Error loading tasks. Please try again later.</td></tr>';
+        });
     }
-    
+
     // Initialize the application
     document.addEventListener('DOMContentLoaded', function() {
       // Check for existing user
@@ -2143,9 +2305,6 @@
         // Pre-fill form fields
         document.getElementById('name').value = currentUser.name;
         document.getElementById('title').value = currentUser.title;
-        
-        // Initialize tracking tab
-        initializeTrackingTab();
       }
       
       // Set up registration button
@@ -2196,6 +2355,58 @@
       
       // Initialize expandedTasks object
       expandedTasks = {};
+      
+      // Set up Firebase real-time listeners for tasks
+      database.ref('tasks').on('child_added', snapshot => {
+        const newTask = snapshot.val();
+        
+        // Check if task is already in local database
+        const existingTaskIndex = taskDatabase.findIndex(task => 
+          task.taskId === newTask.taskId && task.subtaskId === newTask.subtaskId && task.userId === newTask.userId
+        );
+        
+        if (existingTaskIndex === -1) {
+          // Add to local database
+          taskDatabase.push(newTask);
+          
+          // Update tracking table if it's visible
+          if (document.getElementById('tracking-content').style.display !== 'none') {
+            updateTaskInTrackingTable(newTask);
+          }
+        }
+      });
+      
+      database.ref('tasks').on('child_changed', snapshot => {
+        const updatedTask = snapshot.val();
+        
+        // Update in local database
+        const taskIndex = taskDatabase.findIndex(task => 
+          task.taskId === updatedTask.taskId && task.subtaskId === updatedTask.subtaskId && task.userId === updatedTask.userId
+        );
+        
+        if (taskIndex !== -1) {
+          taskDatabase[taskIndex] = updatedTask;
+          
+          // Update tracking table if it's visible
+          if (document.getElementById('tracking-content').style.display !== 'none') {
+            updateTaskInTrackingTable(updatedTask);
+          }
+        }
+      });
+      
+      database.ref('tasks').on('child_removed', snapshot => {
+        const removedTask = snapshot.val();
+        
+        // Remove from local database
+        taskDatabase = taskDatabase.filter(task => 
+          !(task.taskId === removedTask.taskId && task.subtaskId === removedTask.subtaskId && task.userId === removedTask.userId)
+        );
+        
+        // Update tracking table if it's visible
+        if (document.getElementById('tracking-content').style.display !== 'none') {
+          initializeTrackingTable();
+        }
+      });
     });
   </script>
 </body>
