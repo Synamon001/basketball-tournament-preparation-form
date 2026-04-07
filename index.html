@@ -596,6 +596,19 @@
     .edit-form button:hover {
       background-color: #2980b9;
     }
+    
+    /* Style pour le badge de commentaires */
+    .comment-badge {
+      display: inline-block;
+      background-color: white;
+      color: black;
+      border: 1px solid #ccc;
+      border-radius: 50%;
+      padding: 2px 6px;
+      font-size: 10px;
+      margin-left: 5px;
+      font-weight: bold;
+    }
   </style>
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -1001,6 +1014,20 @@
     let taskDatabase = [];
     let taskHistory = [];
     let commentDatabase = [];
+
+    // Function to count comments for a specific task
+    function countCommentsForTask(taskId, subtaskId) {
+      let count = 0;
+      const taskIdentifier = `${taskId}_${subtaskId}`;
+      
+      commentDatabase.forEach(comment => {
+        if (comment.taskIdentifier === taskIdentifier) {
+          count++;
+        }
+      });
+      
+      return count;
+    }
 
     // Function to save user info
     function saveUserInfo() {
@@ -1547,11 +1574,15 @@
             </select>
           `;
           
+          // Count comments for this task
+          const commentCount = countCommentsForTask(taskId, subtaskId);
+          const commentBadge = commentCount > 0 ? `<span class="comment-badge">${commentCount}</span>` : '';
+          
           // Update actions - show remove button only if subtask has assignees
           const hasAssigneesForSubtask = hasAssignees(taskId, subtaskId);
           row.cells[6].innerHTML = `
             <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
-            <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">Chat room</button>
+            <button class="action-btn" onclick="viewAssignees('${taskId}', '${subtaskId}')">Chat room ${commentBadge}</button>
             <button class="action-btn" onclick="viewTaskHistory('${taskId}', '${subtaskId}')">History</button>
             ${hasAssigneesForSubtask ? `<button class="action-btn remove-btn" onclick="removeTask('${taskId}', '${subtaskId}')">Remove</button>` : ''}
           `;
@@ -2202,10 +2233,14 @@
               </select>
             `;
             
+            // Count comments for this task
+            const commentCount = countCommentsForTask(taskInfo.id, subtaskId);
+            const commentBadge = commentCount > 0 ? `<span class="comment-badge">${commentCount}</span>` : '';
+            
             // Actions - will be populated later
             subtaskRow.insertCell(6).innerHTML = `
               <button class="action-btn" onclick="editTask('${subtaskId}')">Edit</button>
-              <button class="action-btn" onclick="viewAssignees('${taskInfo.id}', '${subtaskId}')">Chat room</button>
+              <button class="action-btn" onclick="viewAssignees('${taskInfo.id}', '${subtaskId}')">Chat room ${commentBadge}</button>
               <button class="action-btn" onclick="viewTaskHistory('${taskInfo.id}', '${subtaskId}')">History</button>
             `;
           }
@@ -2413,6 +2448,42 @@
         // Update tracking table if it's visible
         if (document.getElementById('tracking-content').style.display !== 'none') {
           initializeTrackingTable();
+        }
+      });
+      
+      // Set up Firebase real-time listeners for comments
+      database.ref('comments').on('child_added', snapshot => {
+        const newComment = snapshot.val();
+        
+        // Check if comment is already in local database
+        const existingCommentIndex = commentDatabase.findIndex(comment => comment.id === newComment.id);
+        
+        if (existingCommentIndex === -1) {
+          // Add to local database
+          commentDatabase.push(newComment);
+          
+          // Update tracking table if it's visible
+          if (document.getElementById('tracking-content').style.display !== 'none') {
+            // If this comment is for the currently displayed task, refresh comments
+            if (currentTaskId === newComment.taskId && currentSubtaskId === newComment.subtaskId) {
+              loadComments(currentTaskId, currentSubtaskId);
+            }
+            
+            // Update the comment badge on the button
+            const taskId = newComment.taskId;
+            const subtaskId = newComment.subtaskId;
+            const commentCount = countCommentsForTask(taskId, subtaskId);
+            
+            // Find the button and update it
+            const rows = document.querySelectorAll(`tr[data-subtask-id="${subtaskId}"]`);
+            if (rows.length > 0) {
+              const actionsCell = rows[0].cells[6];
+              const chatButton = actionsCell.querySelector('button:nth-child(2)');
+              if (chatButton) {
+                chatButton.innerHTML = `Chat room <span class="comment-badge">${commentCount}</span>`;
+              }
+            }
+          }
         }
       });
     });
