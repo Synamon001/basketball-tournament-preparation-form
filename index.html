@@ -327,7 +327,6 @@
       cursor: pointer;
       color: white; /* White text for better readability */
     }
-    
     .status-select option {
       font-weight: normal;
       background-color: white;
@@ -979,8 +978,7 @@
       </div>
     </div>
   </div>
-  
-  <script>
+    <script>
     // Configuration Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyA_HgpTxJrzCnFFAWIFXCzR8OwPomntgM0",
@@ -1027,6 +1025,25 @@
       });
       
       return count;
+    }
+
+    // Nouvelle fonction pour mettre à jour le badge de commentaires
+    function updateCommentBadge(taskId, subtaskId) {
+      const commentCount = countCommentsForTask(taskId, subtaskId);
+      const commentBadge = commentCount > 0 ? `<span class="comment-badge">${commentCount}</span>` : '';
+      
+      // Trouver tous les boutons de chat pour cette tâche et mettre à jour leur badge
+      const rows = document.querySelectorAll(`tr[data-subtask-id="${subtaskId}"]`);
+      if (rows.length > 0) {
+        const actionsCell = rows[0].cells[6];
+        if (actionsCell) {
+          const chatButton = actionsCell.querySelector('button:nth-child(2)');
+          if (chatButton) {
+            // Préserver les écouteurs d'événements en ne mettant à jour que le contenu HTML
+            chatButton.innerHTML = `Chat room ${commentBadge}`;
+          }
+        }
+      }
     }
 
     // Function to save user info
@@ -1406,10 +1423,15 @@
     }
 
     // MODIFIÉ: Function to update task status using Firebase
-    function updateTaskStatus(taskId, subtaskId, status) {
+    function updateTaskStatus(taskId, subtaskId, status, selectElement) {
       if (!currentUser) {
         alert("Please enter your name and title before updating task status.");
         return;
+      }
+      
+      // Update the select element's class immediately for visual feedback
+      if (selectElement) {
+        selectElement.className = `status-select status-${status}`;
       }
       
       // Find the task in the database and its Firebase key
@@ -1459,10 +1481,14 @@
                   // Add to local history
                   taskHistory.push(historyEntry);
                   
-                  // Update the tracking table
-                  updateTaskInTrackingTable(taskToUpdate);
+                  // We don't need to update the tracking table here anymore
+                  // as we've already updated the select element's class
                 } else {
                   alert("You can only update your own tasks.");
+                  // Reset the select to its previous value if permission denied
+                  if (selectElement) {
+                    selectElement.value = taskToUpdate.status || 'not-started';
+                  }
                 }
               }
             });
@@ -1470,6 +1496,11 @@
         })
         .catch(error => {
           console.error("Error updating task status:", error);
+          // Reset the select to its previous value if there's an error
+          if (selectElement) {
+            selectElement.value = taskToUpdate ? (taskToUpdate.status || 'not-started') : 'not-started';
+            selectElement.className = `status-select status-${selectElement.value}`;
+          }
         });
     }
 
@@ -1565,9 +1596,9 @@
             row.cells[4].textContent = task.reminderTime;
           }
           
-          // Update status with an embedded selector
+          // Update status with an embedded selector - MODIFIÉ pour passer l'élément select
           row.cells[5].innerHTML = `
-            <select class="status-select status-${status}" onchange="updateTaskStatus('${taskId}', '${subtaskId}', this.value)">
+            <select class="status-select status-${status}" onchange="updateTaskStatus('${taskId}', '${subtaskId}', this.value, this)">
               <option value="not-started" ${status === 'not-started' ? 'selected' : ''}>Not started</option>
               <option value="in-progress" ${status === 'in-progress' ? 'selected' : ''}>In progress</option>
               <option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option>
@@ -1893,11 +1924,12 @@
         timestamp: Date.now()
       };
       
+      // Mise à jour immédiate du badge sur tous les boutons de chat pour cette tâche
+      commentDatabase.push(newComment);
+      updateCommentBadge(taskId, subtaskId);
+      
       // Add to Firebase
       database.ref('comments').push(newComment);
-      
-      // Add to local database
-      commentDatabase.push(newComment);
       
       // Clear text field but keep the name
       document.getElementById('new-comment').value = '';
@@ -1933,6 +1965,15 @@
           } else {
             commentsContainer.innerHTML = '';
             
+            taskComments.forEach(comment => {
+              const commentElement = 
+
+Continu 
+MonicaSonnet
+
+Voici la suite du code JavaScript :
+
+Copier
             taskComments.forEach(comment => {
               const commentElement = document.createElement('div');
               commentElement.className = 'comment';
@@ -2223,10 +2264,10 @@
             subtaskRow.insertCell(3).textContent = '';
             subtaskRow.insertCell(4).textContent = '';
             
-            // Default status
+            // Default status - MODIFIÉ pour passer l'élément select
             const subtaskStatusCell = subtaskRow.insertCell(5);
             subtaskStatusCell.innerHTML = `
-              <select class="status-select status-not-started" onchange="updateTaskStatus('${taskInfo.id}', '${subtaskId}', this.value)">
+              <select class="status-select status-not-started" onchange="updateTaskStatus('${taskInfo.id}', '${subtaskId}', this.value, this)">
                 <option value="not-started" selected>Not started</option>
                 <option value="in-progress">In progress</option>
                 <option value="completed">Completed</option>
@@ -2469,20 +2510,8 @@
               loadComments(currentTaskId, currentSubtaskId);
             }
             
-            // Update the comment badge on the button
-            const taskId = newComment.taskId;
-            const subtaskId = newComment.subtaskId;
-            const commentCount = countCommentsForTask(taskId, subtaskId);
-            
-            // Find the button and update it
-            const rows = document.querySelectorAll(`tr[data-subtask-id="${subtaskId}"]`);
-            if (rows.length > 0) {
-              const actionsCell = rows[0].cells[6];
-              const chatButton = actionsCell.querySelector('button:nth-child(2)');
-              if (chatButton) {
-                chatButton.innerHTML = `Chat room <span class="comment-badge">${commentCount}</span>`;
-              }
-            }
+            // Mettre à jour le badge de commentaires
+            updateCommentBadge(newComment.taskId, newComment.subtaskId);
           }
         }
       });
