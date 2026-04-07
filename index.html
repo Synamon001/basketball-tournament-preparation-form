@@ -848,7 +848,7 @@
           <option value="subtask7-1">Gather information from all teams</option>
           <option value="subtask7-2">Draft report sections</option>
           <option value="subtask7-3">Compile final report</option>
-          <option value="subtask7-4">Present report to stakeholders</option>
+          <option value="subtask7-4">Present report</option>
         </select>
         
         <label for="task7-deadline">Deadline to complete this task:</label>
@@ -1679,8 +1679,7 @@
                   subtaskId: subtaskId,
                   action: 'edited',
                   timestamp: Date.now(),
-                  userId: currentUser?.uid ||
-                    userId: currentUser?.uid || 'guest',
+                  userId: currentUser?.uid || 'guest',
                   userName: currentUser?.name || 'Guest User'
                 };
                 
@@ -2136,7 +2135,7 @@
             'subtask7-1': 'Gather information from all teams',
             'subtask7-2': 'Draft report sections',
             'subtask7-3': 'Compile final report',
-            'subtask7-4': 'Present report to stakeholders'
+            'subtask7-4': 'Present report'
           }
         }
       };
@@ -2355,6 +2354,15 @@
       
       // Initialize expandedTasks object
       expandedTasks = {};
+      
+      // Add explicit event listeners for tab buttons
+      document.getElementById('registration-tab').addEventListener('click', function() {
+        openNewTab('registration');
+      });
+      
+      document.getElementById('tracking-tab').addEventListener('click', function() {
+        openNewTab('tracking');
+      });
       
       // Set up Firebase real-time listeners for tasks
       database.ref('tasks').on('child_added', snapshot => {
