@@ -327,6 +327,7 @@
       cursor: pointer;
       color: white; /* White text for better readability */
     }
+    
     .status-select option {
       font-weight: normal;
       background-color: white;
@@ -978,7 +979,8 @@
       </div>
     </div>
   </div>
-    <script>
+  
+  <script>
     // Configuration Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyA_HgpTxJrzCnFFAWIFXCzR8OwPomntgM0",
@@ -1669,7 +1671,6 @@
           break;
         }
       }
-      
       const editForm = `
         <div class="edit-form">
           <h3>Edit Task: ${taskName}</h3>
@@ -1924,8 +1925,10 @@
         timestamp: Date.now()
       };
       
-      // Mise à jour immédiate du badge sur tous les boutons de chat pour cette tâche
+      // Incrémenter le compteur localement avant la réponse de Firebase
       commentDatabase.push(newComment);
+      
+      // Mettre à jour le badge sur le bouton dans la table
       updateCommentBadge(taskId, subtaskId);
       
       // Add to Firebase
@@ -1965,15 +1968,6 @@
           } else {
             commentsContainer.innerHTML = '';
             
-            taskComments.forEach(comment => {
-              const commentElement = 
-
-Continu 
-MonicaSonnet
-
-Voici la suite du code JavaScript :
-
-Copier
             taskComments.forEach(comment => {
               const commentElement = document.createElement('div');
               commentElement.className = 'comment';
